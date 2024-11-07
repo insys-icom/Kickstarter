@@ -1,0 +1,26 @@
+# create directories and device nodes
+::sysinit:/bin/mkdir -p /tmp/lock /tmp/run /data/kickstarter /data/kickstarter/files /data/kickstarter/hashes /data/kickstarter/irm /data/kickstarter/ics
+::sysinit:/bin/chown user:users -R /data/kickstarter /data/log
+::sysinit:/bin/ln -s /data/log /var/log
+
+# start SSH server
+::respawn:/bin/dropbear -R -F -b /etc/banner.txt
+
+# start logger
+::respawn:/bin/metalog -N -C /etc/metalog.conf
+
+# start radvd
+::respawn:/bin/radvd -C /etc/radvd.conf -n -p /tmp/radvd.pid -m syslog
+
+# start web server vor MQTT broker access
+::respawn:/bin/httpd -f -p 80 -h /var/web -u nobody:nogroup
+
+# start MQTT broker
+::respawn:/bin/mosquitto -c /etc/mosquitto.conf
+
+# start kickstarter
+::respawn:su user -c "/bin/python /home/user/kickstarter/kickstart.py -c /home/user/kickstarter/config.json"
+
+::restart:/sbin/init
+::shutdown:/sbin/halt
+::ctrlaltdel:/sbin/reboot

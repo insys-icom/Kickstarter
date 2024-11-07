@@ -1,0 +1,46 @@
+<h3>Overview</h3>
+
+<p>Kickstarter is an application that kickstarts/bootstraps other INSYS icom OS devices in parallel.</p>
+<ul>
+    <li>upgrade the <b>firmware</b></li>
+    <li>upload <b>Update packets</b> with containers, profiles, licenses</li>
+    <li>upload apply <b>ASCII configs</b></li>
+    <li>upload individual settings from an <b>CSV file</b> depending on the devices serial number</li>
+    <li>register the devices at <b>iRM (icom Router Management)</b> and configure the devices to use it</li>
+</ul>
+
+<p>The devices to be kickstarted should run with default settings.
+    If that is not the case it may be possible, that Kickstarter can't access the REST-API of the device.</p>
+
+<p>Kickstarting also works in parallel!
+    This is possible when all the devices are connected to the same net as Kickstarter by using a switch.</p>
+
+<p>Devices to be kickstarted will be detected and displayed in a list.
+    Their IPv6 address will be displayed as an hyper link, so you may connect to their UI and check the results of the kickstarting process.</p>
+
+<p>The Kickstarter container will need unauthorized access to the CLI of the router.
+    At least the &quot;Status&quot; access rights are needed.
+    This is necessary to find out the routers own IP addresses to avoid kickstarting the router, on which the container is running.</p>
+
+<p>The column &quot;action&quot; will display the current kickstarting action in process.
+    In case the &quot;action&quot; is &quot;---&quot; the kickstaring has been finished.</p>
+
+<p>Devices with an &quot;INFO LED&quot; will also display the progress of the kicstarting process</p>
+<ul>
+    <li>INFO LED <b>blinking</b>: a new detected devices has been detected, kickstarting started</li>
+    <li>INFO LED <b>on</b>: kickstarting process has finishied</li>
+    <li>INFO LED <b>off</b>: kickstarting was not completelly successful</li>
+</ul>
+
+<p>The log file will show the last lines of the current log.
+    The full log is available as file after logging into the container in the file &quot;/data/log/kickstarter/current&quot;.
+    The log file will be rotated and archived after its size reached 1 MByte.</p>
+
+<h5>SSH</h5>
+<p>There exist two users:</p>
+<ul>
+    <li>User name &quot;root&quot; / password &quot;root&quot;</li>
+    <li>User name &quot;user&quot; / password &quot;user&quot;: this user runs the kickstarter application</li>
+</ul>
+
+<p>It is highly recommended to change passwords and install ssh keys in ~/.ssh/authorized_keys</p>

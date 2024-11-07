@@ -1,0 +1,4 @@
+root:x:0:root
+httpd:x:10:httpd
+users:x:1000:user
+nogroup:x:1001:nobody

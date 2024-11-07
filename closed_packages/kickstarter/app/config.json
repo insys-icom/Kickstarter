@@ -1,0 +1,51 @@
+{
+    "net": {
+        "interface": "eth0",
+        "prefix": "fdc2::",
+        "ignore-ips": ""
+    },
+
+    "mqtt": {
+        "url": "fdc2::1",
+        "port": "8883"
+    },
+
+    "dirs": {
+        "log":       "/var/log/kickstarter/current",
+        "files":     "/data/kickstarter/files",
+        "hashes":    "/data/kickstarter/hashes",
+        "irm":       "/data/kickstarter/irm",
+        "ics":       "/data/kickstarter/ics"
+    },
+
+    "profile": {
+        "auto-update": {
+            "active": false,
+            "uri": "https://autoupdate.insys-tec.net/m3/list_files/bleeding_full.txt",
+            "check_interval": "24"
+        },
+
+        "firmware": {
+            "filename": "---"
+        },
+
+        "uploads": [
+        ],
+
+        "config_table": {
+            "filename": "---"
+        },
+
+        "irm": {
+            "active": false,
+            "uri": "https://cloud.insys-icom.de/api",
+            "token": "",
+            "group": "Fresh devices"
+        },
+
+        "ics": {
+            "active": false,
+            "uri": ""
+        }
+    }
+}

@@ -1,0 +1,169 @@
+<!DOCTYPE HTML>
+<html lang="de-DE">
+<head>
+<title>INSYS icom Kickstarter</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="pics/favicon.ico" sizes="48x48">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="mqtt.min.js" ></script>
+<script src="javascript.js"></script>
+</head>
+
+<body onload="start_mqtt()">
+
+<navi>
+    <div class="box box_navi">
+        <div class="menue-buttons">
+            <fieldset>
+                <br>
+                <table>
+                    <tr><td align="center"><img src="pics/logo_insys.png"></td></tr>
+                    <tr><td align="center"><h4>KICKSTARTER</h4></td></tr>
+                    <tr><td><input type="radio" onclick="view_boxes('status')" name="menue" value="Status" id="rb_status" />
+                            <label for="rb_status">Status</label></td></tr>
+                    <tr><td><input type="radio" onclick="view_boxes('settings')" name="menue" value="Settings" id="rb_settings" />
+                            <label for="rb_settings">Settings</label></td></tr>
+                    <tr><td><input type="radio" onclick="view_boxes('files')" name="menue" value="Files" id="rb_files" />
+                            <label for="rb_files">Files</label></td></tr>
+                    <tr><td><input type="radio" onclick="view_boxes('help')" name="menue" value="Help" id="rb_help" />
+                        <label for="rb_help">Help</label></td></tr>
+                </table>
+            </fieldset>
+        </div>
+    </div>
+</navi>
+
+<top>
+    <div class="box box_top">
+    </div>
+</top>
+
+<left id="left">
+    <br>
+    <div class="box box_status">
+        <h3>Status</h3>
+        <p style="color:red;" id="alert"></p>
+        <table class="list_table">
+            <tr><td>MQTT-Broker</td><td class="status_mqtt_broker">Not online</td><td></td></tr>
+            <tr><td>Kickstarter</td><td class="status_kickstarter">Not online</td><td></td></tr>
+            <tr><td>Writing firmware</td><td id="fw_latest">---</td></tr>
+        </table>
+    </div>
+
+    <div class="box box_status">
+        <h3>Detected devices</h3>
+        <table class="list_table" id="devicetable"></table>
+    </div>
+
+    <div class="box box_settings">
+        <h3>Uploading Firmware</h3>
+        <table>
+            <tr>
+                <td>Firmware file</td>
+                <td><select id="firmware_to_write" name="firmware_to_write"> </select> (autoupdate-X.Y-full.tar)</td>
+            </tr>
+            <tr><td>&nbsp;</td></tr>
+            <tr>
+                <td>Check for new firmware</td>
+                <td><input id="check_active" name="check_active" type="checkbox"></td>
+            </tr>
+            <tr>
+                <td>Interval for firmware check</td>
+                <td><input id="check_interval" name="check_interval" type="text" size=4> hours</td>
+            </tr>
+            <tr>
+                <td>URI for firmware check</td>
+                <td><input id="check_uri" name="check_uri" type="text" size=55></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="box box_settings">
+        <h3>Uploading more (e.g. container, profiles, licenses)</h3>
+        <table id="upload_table"></table>
+    </div>
+
+    <div class="box box_settings">
+        <h3>Upload and apply CSV config table</h3>
+        <table>
+            <tr>
+                <td>Config table</td>
+                <td><select id="config_to_write" name="config_to_write"> </select></td>
+                <td><input id="download_config" name="download_config" hidden="true"></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="box box_settings">
+        <h3>Register device at iRM (icom Router Management)</h3>
+        <table>
+            <tr>
+                <td>Activate registration of device</td>
+                <td><input id="irm_active" name="irm_active" type="checkbox" onchange="change_irm_active()"></td>
+            </tr>
+            <tr>
+                <td>URI of iRM API</td>
+                <td><input id="irm_uri" name="irm_uri" type="text" size=55></td>
+            </tr>
+            <tr>
+                <td>API token</td>
+                <td><input id="irm_token" name="irm_token" type="text" size=55></td>
+            </tr>
+            <tr>
+                <td>Group for new devices</td>
+                <td><input id="irm_group" name="irm_group" type="text" size=55></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="box box_files">
+        <h3>Stored files</h3>
+        <table class="list_table" id="filetable"></table>
+        <br>
+    </div>
+</left>
+
+<right>
+    <br>
+    <div class="box box_upload">
+        <h3>Uploading files</h3>
+        <label>
+            <input id="dateien" onchange="filechooser(event)" name="files[]" type="file" multiple>
+        </label>
+        <br>
+        <p id="files_uploading"></p>
+    </div>
+
+    <div class="box box_save">
+        <h3>Save settings</h3>
+        <input id="store_settings" onclick="store_settings()" name="store_settings" type="button" value="Save" disabled>
+    </div>
+
+    <div class="box box_status">
+        <h3>Log</h3>
+        <pre><code id="log_kickstarter"></code></pre>
+    </div>
+</right>
+
+<helpindex>
+    <br>
+    <div class="box box_help_index">
+    <h3>Help content</h3>
+        <table class="list_table">
+            <tr><td><button class="astext" onclick="help_chapter('overview.html')">Overview</button></td></tr>
+            <tr><td><button class="astext" onclick="help_chapter('status.html')">Status</button></td></tr>
+            <tr><td><button class="astext" onclick="help_chapter('settings.html')">Settings</button></td></tr>
+            <tr><td><button class="astext" onclick="help_chapter('files.html')">Files</button></td></tr>
+        </table>
+    </div>
+</helpindex>
+
+<help>
+    <br>
+    <div class="box box_help">
+        <p id="help_text"></p>
+    </div>
+</help>
+
+</body></html>

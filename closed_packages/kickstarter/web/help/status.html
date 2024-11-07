@@ -1,0 +1,18 @@
+<h3>Status</h3>
+
+<p>Kickstarter offers all information via an MQTT broker.
+    This web site visualizes the settings and the progress of Kickstarter using that MQTT.
+    Thatfore a steady connection to the MQTT broker is essential.
+    The state of that MQTT connection must be &quot;online&quot; so all data can get updated in real time</p>
+
+<p>The application itself also connects to that MQTT broker. The Status of Kickstarter must also be &quot;online&quot;.
+    In case it's &quot;offline&quot; the application doesn't run.</p>
+
+<p>In case Kickstarter has been configured to upgrade the firmware, the target version is displayed here, too.</p>
+
+<p>The container runs an router advertiser daemon, that announces a local IPv6 network.
+    In default settings this is <b>fdc2::/24</b>.</p>
+
+<p>All IP devices connected to this LAN can now be contacted, even if they are in default settings and use the same IPv4 address 192.168.1.1/24.</p>
+
+<p>The settings site should update itself in real time, a reload is normally not necessary.</p>
