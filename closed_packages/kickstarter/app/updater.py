@@ -39,11 +39,13 @@ class Updater(Thread):
 
     def run(self):
         # log in
+        self.__message['action'] = "Log in at device"
         if self.__login_rest() is False:
-            self.__queue.put(self.__message)
+            self.__end_updating("off")
             return
 
         # get serialnumber of this device
+        self.__message['action'] = "Get serial number"
         for _ in range(3):
             self.__message['serial'], self.__message['version'], self.__message['board'] = self.__get_serial()
             if self.__message['serial'] is None:
@@ -51,7 +53,7 @@ class Updater(Thread):
                 continue
         if self.__message['serial'] is None:
             self.__logger.error("No serial number found")
-            self.__queue.put(self.__message)
+            self.__end_updating("off")
             return
         self.__logger.info(f"Device serial number: {self.__message['serial']}")
 
