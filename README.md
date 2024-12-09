@@ -1,21 +1,21 @@
 # Kickstarter
-Set up INSYS icom devices completely autonomously and in parallel!
+Set up [INSYS icom devices](https://www.insys-icom.com/en/products/router-gateways/) completely autonomously and in parallel!
 
-Kickstarter is a container, that runs on an INSYS icom device like MRX.
-It detects other INSYS icom devices and can set them up:
-- updating the **firmware**
-- uploading **config** (ASCII, binary profiles), containers, licenses...
-- uploading device **individual settings**
-- registering at **iRM** (icom Router Management)
+**Kickstarter** is a container that runs on an INSYS icom device, such as the MRX. It automates the setup of your INSYS icom devices by:
+- Updating the [**icom OS firmware**](https://icom-os.releasenotes.io/)
+- Uploading **configurations** (ASCII, binary profiles), containers, licenses, etc.
+- Applying device-specific **individual settings**
+- Registering devices at [**iRM** (icom Router Management)](https://cloud.insys-icom.com)
+
+It can update devices in parallel! That saves a huge amount of time when setting up a whole bunch of new devices.   
 ![Kickstarter Overview](doc/Kickstarter_Overview.png)
 
-It can update devices in parallel! That saves a huge amount of time when setting up a whole bunch of new devices.
-
+## UserInterface
 Kickstarter has a web UI for its configuration and to visualize its progress with the devices:
 ![Kickstarter web UI setting up devices in parallel](doc/Kickstarter_Browser.png)
 
-Look at its [documentation](closed_packages/kickstarter/web/help), what it can do.
-
+## Documentation
+Look at its [documentation](closed_packages/kickstarter/web/help), what it can do.  
 In case you miss a functionality or find a bug, please do not hesitate to open up an issue!
 
 ## Configuraton of the MRX running the Kickstarter container
@@ -28,7 +28,7 @@ If it should do that, it needs internet access, so you have to configure a gatew
 ![Configuration of MRX that runs Kickstarter](doc/Kickstarter_MRX_config.png)
 
 ## Building the container from scratch
-Kickstarter is a project derived from m3-container.net. 
+Kickstarter is a project derived from [m3-container.net](https://m3-container.net/). 
 Its github [repo](https://github.com/insys-icom/M3_Container) describes in detail, how to build this container.
 In short:
 - install the SDK
