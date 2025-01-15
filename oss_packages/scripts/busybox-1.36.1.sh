@@ -51,13 +51,13 @@ menuconfig()
     cd "${PKG_BUILD_DIR}"
     cp -av "${BBOX_OVERLAY_CONFIG}" "${BBOX_BUILD_DIR}/.config"
 
+    # add return type "int" to test programm for new compilers
+    sed -i "s|^main() {}|int main() {}|" "${PKG_BUILD_DIR}/scripts/kconfig/lxdialog/check-lxdialog.sh"
     make ${M3_MAKEFLAGS} \
          V=1 \
          O="${BBOX_BUILD_DIR}" \
-         CONFIG_EXTRA_CFLAGS="${M3_CFLAGS} \
-         -I${STAGING_INCLUDE}" \
-         CONFIG_EXTRA_LDFLAGS="${M3_LDFLAGS} \
-         -L${STAGING_LIB}" \
+         CONFIG_EXTRA_CFLAGS="${M3_CFLAGS} -I${STAGING_INCLUDE}" \
+         CONFIG_EXTRA_LDFLAGS="${M3_LDFLAGS} -L${STAGING_LIB}" \
          AR="${AR}" \
          RANLIB="${RANLIB}" \
          NM="${NM}" \
