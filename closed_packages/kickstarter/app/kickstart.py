@@ -253,10 +253,11 @@ class Kickstart():
         # ignore own IPs from this devices
         own_ips = []
         while True:
-            own_ips = self.__find_own_ip()
-            if own_ips is None:
+            ret = self.__find_own_ip()
+            if ret is None:
                 break;
 
+            own_ips = ret
             if len(own_ips) < 1:
                 sleep(10)
             else:

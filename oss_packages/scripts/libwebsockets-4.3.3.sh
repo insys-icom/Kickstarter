@@ -28,6 +28,10 @@ PKG_INSTALL_DIR="${PKG_BUILD_DIR}/install"
 configure()
 {
     cd "${PKG_BUILD_DIR}"
+
+    # avoid searching for libcap, so it doesn't get linked to
+    sed -i "s|^CHECK_LIBRARY_EXISTS(|#CHECK_LIBRARY_EXISTS(|" "${PKG_BUILD_DIR}/CMakeLists.txt"
+
     cmake . \
         -DCMAKE_C_COMPILER=${M3_CROSS_COMPILE}gcc \
         -DCMAKE_C_FLAGS="${M3_CFLAGS} -fPIC -I${STAGING_INCLUDE} -L${STAGING_LIB} -Wno-sign-compare" \
