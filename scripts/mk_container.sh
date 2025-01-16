@@ -2,21 +2,16 @@
 
 SCRIPTSDIR=$(dirname $0)
 TOPDIR=$(realpath ${SCRIPTSDIR}/..)
-. "${TOPDIR}"/scripts/common_settings.sh
-. "${TOPDIR}"/scripts/helpers.sh
-
-UPDATE_TAR="${BUILD_DIR}/update/rootfs.tar"
-UPDATE_TAR_XZ="${UPDATE_TAR}.xz"
 
 # init possible entries of a MANIFEST
-FILENAME="container"
+FILENAME=""
 FILESIZE=""
 FILETYPE=""
 DESCRIPTION=""
 VERSION=""
 MD5SUM=""
 KEY=""
-FILESYSTEM_LIST="default.txt"
+FILESYSTEM_LIST=""
 
 # print parameter list of this script
 usage()
@@ -37,9 +32,9 @@ print_manifest_entry()
     echo "FILESIZE=${FILESIZE}"
     echo "FILETYPE=Container"
     echo "MD5SUM=${MD5SUM}"
-    test -n "${KEY}" && echo "KEY=${KEY}.router"
-    test -n "${VERSION}" && echo "VERSION=${VERSION}"
-    test -n "${DESCRIPTION}" && echo "DESCRIPTION=${DESCRIPTION}"
+    [ "${KEY}" ] && echo "KEY=${KEY}.router"
+    [ "${VERSION}" ] && echo "VERSION=${VERSION}"
+    [ "${DESCRIPTION}" ] && echo "DESCRIPTION=${DESCRIPTION}"
     echo ""
 }
 
@@ -68,8 +63,11 @@ get_options()
                 shift
                 VERSION="${1}"
             ;;
-            "-h")
+            "-a")
                 shift
+                ARCH="${1}"
+            ;;
+            "-h")
                 usage
                 exit 0
             ;;
@@ -87,35 +85,60 @@ do_strip()
     FILE_TYPE=$(file ${1})
     if echo "${FILE_TYPE}" | grep -q "${ELF_BINARY}" ; then
         if echo "${FILE_TYPE}" | grep -q "executable" ; then
-            ${M3_CROSS_COMPILE}strip "${1}" > /dev/null 2>&1
+            ${M3_TARGET}-strip "${1}" > /dev/null 2>&1
         else
             if echo "${FILE_TYPE}" | grep -q "shared object" ; then
-                ${M3_CROSS_COMPILE}strip "${1}" > /dev/null 2>&1
+                ${M3_TARGET}-strip "${1}" > /dev/null 2>&1
             else
                 if echo "${FILE_TYPE}" | grep -q "BuildID" ; then
                     # kernel modules my not be fully stripped
-                    ${M3_CROSS_COMPILE}strip --strip-debug "${1}"
+                    ${M3_TARGET}-strip --strip-debug "${1}"
                 fi
             fi
         fi
     fi
 }
 
-# process the list of files and permissions for the filesystem
-# $1 = action: create_tar, create_list
-# $2 = fs list
-# $3 = FS_OUTFILE
-process_filesystem_list()
+# print lines of all files into one temporary file
+# $1 temporary file
+# $2 original fs list file
+resolve_includes()
 {
-    ACTION="${1}"
-    FILESYSTEM_LIST="${SCRIPTSDIR}/${2}"
-    FS_OUTFILE="${3}"
+    TMP_FILE="${1}"
+    FILESYSTEM_LIST="${2}"
 
-    echo "-> Creating archive $FS_OUTFILE containing the root file system"
     if ! [ -e "${FILESYSTEM_LIST}" ] ; then
         echo "   ERROR: the given list file \"${FILESYSTEM_LIST}\" does not exist"
         exit 1
     fi
+
+    OLDIFS=$IFS
+    IFS=$'\n'
+    for LINE in $(cat ${FILESYSTEM_LIST} | grep -F -v '#' | grep -Ev '^$' ) ; do
+        TYPE=$(echo ${LINE} | tr -s ' ' | cut -s -d' ' -f1 | sed 's/^ *//' | sed 's/ *$//' )
+        if [ "${TYPE}" == "include" ] ; then
+            FILE=$(echo ${LINE} | tr -s ' ' | cut -s -d' ' -f2)
+            FILE=$(eval "echo ${FILE}")
+            FILESYSTEM_LIST_COPY="${FILESYSTEM_LIST}"
+            INCLUDE_FILE=$(dirname $(realpath ${FILESYSTEM_LIST}))/"${FILE}"
+            resolve_includes "${TMP_FILE}" "${INCLUDE_FILE}"
+            FILESYSTEM_LIST="${FILESYSTEM_LIST_COPY}"
+        else
+            echo "${LINE}" >> "${TMP_FILE}"
+        fi
+    done
+    IFS=$OLDIFS
+}
+
+# process the list of files and permissions for the filesystem
+# $1 = fs list
+# $2 = FS_OUTFILE
+process_filesystem_list()
+{
+    FILESYSTEM_LIST="${1}"
+    FS_OUTFILE="${2}"
+
+    echo "  -> Creating archive of containers root file system"
 
     rm -f "${FS_OUTFILE}"
     rm -rf "${FS_TARGET_DIR}"
@@ -139,8 +162,6 @@ process_filesystem_list()
         GROUP="${PARAM_4}"
 
         # we have to keep the "." in front of the path inside the tar file
-        # we could have cut off the leading /, but we didn't and now we need to keep it for compatibility
-        # in update.c we extract "./usr/share/version", which would fail otherwise
         TAR_FILES=".${DESTINATION_FILE}"
 
         # remove symbolic links, because overwriting them will overwrite the link target
@@ -155,8 +176,6 @@ process_filesystem_list()
                     chmod 0644 "${TARGET_DIR}${DESTINATION_FILE}"
                     do_strip "${TARGET_DIR}${DESTINATION_FILE}"
                 fi
-                md5sum "${TARGET_DIR}${DESTINATION_FILE}" | sed "s|${TARGET_DIR}/||" >> "${TARGET_DIR}/md5sums"
-                LINE="${TYPE} ${DESTINATION_FILE} ${TARGET_DIR}${DESTINATION_FILE} ${PERMISSON} ${OWNER} ${GROUP}"
             ;;
             "dir")
                 PERMISSON="${PARAM_1}"
@@ -164,7 +183,6 @@ process_filesystem_list()
                 GROUP="${PARAM_3}"
                 test -e "${TARGET_DIR}${DESTINATION_FILE}" -a ! -d "${TARGET_DIR}${DESTINATION_FILE}" && rm -f "${TARGET_DIR}${DESTINATION_FILE}"
                 test -d "${TARGET_DIR}${DESTINATION_FILE}" || mkdir --mode=${PERMISSON} "${TARGET_DIR}${DESTINATION_FILE}" || exit_failure "failed to create directory ${DESTINATION_FILE}"
-                LINE="${TYPE} ${DESTINATION_FILE} ${PERMISSON} ${OWNER} ${GROUP}"
             ;;
             "slink")
                 test -d "${TARGET_DIR}${DESTINATION_FILE}" && rm -rf "${TARGET_DIR}${DESTINATION_FILE}"
@@ -176,86 +194,55 @@ process_filesystem_list()
                 TAR_FILES=""
                 for SOURCE_FILE in $(eval echo "${PARAM_1}" | sort) ; do
                     FNAME=$(basename "${SOURCE_FILE}")
-                    # ignore directorys here
+                    # ignore directories here
                     if [ -e "${SOURCE_FILE}" -a ! -d "${SOURCE_FILE}" ] ; then
                         cmp "${SOURCE_FILE}" "${TARGET_DIR}${DESTINATION_FILE}/${FNAME}" > /dev/null 2>&1
                         if [ $? -ne 0 ] ; then
                             cp -fL "${SOURCE_FILE}" "${TARGET_DIR}${DESTINATION_FILE}/${FNAME}" || exit_failure "failed to copy ${DESTINATION_FILE}/${FNAME}"
                         fi
-                        md5sum "${TARGET_DIR}${DESTINATION_FILE}/${FNAME}" | sed "s|${TARGET_DIR}/||" >> "${TARGET_DIR}/md5sums"
-                        LINE="${TYPE} ${DESTINATION_FILE}/${FNAME} ${TARGET_DIR}${DESTINATION_FILE} ${PERMISSON} ${OWNER} ${GROUP}"
                         TAR_FILES="${TAR_FILES} ./rootfs${DESTINATION_FILE}/${FNAME}"
                     fi
                 done
             ;;
             *)
                 echo "Warning: Don't know how to make a ${TYPE}"
-                # exit 1
             ;;
         esac
 
-        case ${ACTION} in
-            "create_tar")
-                echo "./rootfs/${TAR_FILES}" | xargs tar --append -f ${FS_OUTFILE} --directory="${FS_TARGET_DIR}" --no-recursion --numeric-owner --mode=${PERMISSON} --owner=${OWNER} --group=${GROUP}
-            ;;
-            "create_list")
-                echo ${LINE} >> "${FS_OUTFILE}"
-            ;;
-            *)
-                echo "Error: Don't know how to ${ACTION}"
-                # exit 1
-            ;;
-        esac
-
+        # append file to tar
+        echo "./rootfs/${TAR_FILES}" | xargs tar --append -f ${FS_OUTFILE} --directory="${FS_TARGET_DIR}" --no-recursion --numeric-owner --mode=${PERMISSON} --owner=${OWNER} --group=${GROUP}
     done
-    test "create_tar" = "${ACTION}" && tar --append -f ${FS_OUTFILE} --directory="${FS_TARGET_DIR}" --no-recursion --numeric-owner --mode=644 --owner=0 --group=0 "./rootfs/md5sums"
     IFS=$OLDIFS
 }
 
-# try the normal and extreme compression, keep the best
-# in both cases compression level 6 is used, because 9 MiB of decompression RAM is enough
+# compression level 6 is used, because 9 MiB of decompression RAM is enough
 # and it will double with each higher compression level
 #
 # $1 file to compress
 # $2 compressed file
-compress_best()
+compress()
 {
     [ -z ${CPU_THREADS} ] && CPU_THREADS=2
-
-    xz -6 -T${CPU_THREADS} --keep --stdout "${1}" > "${2}.6" &
-    normal_pid="${!}"
-    xz -6e -T${CPU_THREADS} --keep --stdout "${1}" > "${2}.6e" &
-    extreme_pid="${!}"
-    wait ${normal_pid} ${extreme_pid}
-    normal_size=$(stat -c %s "${2}.6")
-    extreme_size=$(stat -c %s "${2}.6e")
-    if [ ${normal_size} -gt ${extreme_size} ] ; then
-        echo "-> Compressing with xz -6e (${normal_size} instead of ${extreme_size} bytes without -e)"
-        rm -f "${2}.6"
-        mv "${2}.6e" "${2}"
-    else
-        echo "-> Compressing with xz -6 (${extreme_size} instead of ${normal_size} bytes with -e)"
-        rm -f "${2}.6e"
-        mv "${2}.6" "${2}"
-    fi
+    xz -6 -T${CPU_THREADS} --keep --stdout "${1}" > "${2}"
+    echo "  -> Compressed image size: $(du -sh ${2} | cut -f1)"
 }
 
 # encrypt a packed rootfs with a random key.
 # The random key is encrypted with a locally stored RSA key pair and attached to the compressed root file system image
 encrypt()
 {
-    echo "-> Encypting compressed archive"
+    echo "  -> Encypting compressed archive"
 
     # abort in case there is no key to encrypt with
     if ! [ -e  "${SCRIPTSDIR}/keys/${KEY}" ] ; then
-        echo "-> Generating the public and private RSA key pair in file ${SCRIPTSDIR}/keys/${KEY}"
+        echo "  -> Generating the public and private RSA key pair in file ${SCRIPTSDIR}/keys/${KEY}"
         echo "   NEVER, EVER give this file to anyone!"
 
         # generate RSA key pair
         openssl genrsa -out "${SCRIPTSDIR}/keys/${KEY}" 2048 2> /dev/null
 
         # export public part of RSA key pair
-        echo "-> Export public key in separate file, load this file onto the router"
+        echo "  -> Export public key in separate file, load this file onto the router"
         openssl rsa -pubout -in "${SCRIPTSDIR}/keys/${KEY}" -out "${SCRIPTSDIR}/keys/${KEY}.router" -outform PEM 2> /dev/null
 
         # ATTENTION! Yes, it is true! Upload the _PUBLIC_ part of the key pair to the router
@@ -288,42 +275,55 @@ encrypt()
 
 main()
 {
-    # create the target directory for the container image, in case it does not exist, yet
-    test -d ${OUTPUT_DIR} || mkdir ${OUTPUT_DIR}
-
     # get all options
     get_options "${@}"
+
+    . "${TOPDIR}"/scripts/common_settings.sh
+    UPDATE_TAR="${BUILD_DIR}/update/rootfs.tar"
+    UPDATE_TAR_XZ="${UPDATE_TAR}.xz"
+    [ "${ARCH}" ] || ARCH="armv7"
+
+    # create the target directory for the container image, in case it does not exist, yet
+    test -d ${OUTPUT_DIR} || mkdir ${OUTPUT_DIR}
 
     # save current date in rootfs
     date "+%Y-%m-%d %H:%M:%S" > "${SKELETON_DIR}/usr/share/build"
 
+    # resolve all includes of the filesystem list file
+    TMP_FILE=$(mktemp)
+    resolve_includes "${TMP_FILE}" "${SCRIPTSDIR}/rootfs_lists/${FILESYSTEM_LIST}"
+
     # pack the root of the new container
-    process_filesystem_list "create_tar" "${FILESYSTEM_LIST}" "${UPDATE_TAR}"
+    process_filesystem_list "${TMP_FILE}" "${UPDATE_TAR}"
+
+    # remove the temporary file
+    rm -f "${TMP_FILE}"
 
     # compress the tar with xz
-    compress_best "${UPDATE_TAR}" "${UPDATE_TAR_XZ}"
+    compress "${UPDATE_TAR}" "${UPDATE_TAR_XZ}"
     rm "${UPDATE_TAR}"
 
     # rename the image
     mv "${UPDATE_TAR_XZ}" "${BUILD_DIR}/update/${FILENAME}.tar.xz"
 
     # optionally encrypt archive
-    if ! [ "${KEY}" = "" ] ; then
-        encrypt
-    fi
-
-    # create a update packet consisting of the root FS of the container and the MANIFEST
-    echo "-> Creating MANIFEST"
-    FILESIZE="$(stat -c %s "${BUILD_DIR}/update/${FILENAME}.tar.xz")"
-    MD5SUM="$(md5sum "${BUILD_DIR}/update/${FILENAME}.tar.xz" | cut -b1-32)"
-    MANIFEST="${BUILD_DIR}/update/MANIFEST"
-    print_manifest_entry >> "${MANIFEST}"
-    FILES="MANIFEST ${FILENAME}.tar.xz"
+    ! [ "${KEY}" = "" ] && encrypt
 
     CONTAINER_FILENAME="${OUTPUT_DIR}/${FILENAME}_$(date +%Y-%m-%d_%H%M%S).tar"
-    rm -f "${CONTAINER_FILENAME}"
-    cd "${BUILD_DIR}/update"
-    tar -chf "${CONTAINER_FILENAME}" ${FILES}
+    if [ "${ARCH}" == amd64 ] ; then
+        # move created file
+        mv "${BUILD_DIR}/update/${FILENAME}.tar.xz" "${CONTAINER_FILENAME}"
+    else
+        # create a update packet consisting of the root FS of the container and the MANIFEST
+        FILESIZE="$(stat -c %s "${BUILD_DIR}/update/${FILENAME}.tar.xz")"
+        MD5SUM="$(md5sum "${BUILD_DIR}/update/${FILENAME}.tar.xz" | cut -b1-32)"
+        MANIFEST="${BUILD_DIR}/update/MANIFEST"
+        print_manifest_entry >> "${MANIFEST}"
+
+        rm -f "${CONTAINER_FILENAME}"
+        cd "${BUILD_DIR}/update"
+        tar -cf "${CONTAINER_FILENAME}" "MANIFEST" "${FILENAME}.tar.xz"
+    fi
 
     # create symlink to latest image
     rm -f "${OUTPUT_DIR}/${FILENAME}"
@@ -334,7 +334,7 @@ main()
     # get rid of the working files
     rm -Rf "${BUILD_DIR}/update"
 
-    echo -en "\nFinal update packet with the container is stored in ${CONTAINER_FILENAME}\n"
+    echo -en "  -> Final update packet with the container is stored in ${CONTAINER_FILENAME}\n\n"
 }
 
 main "${@}"

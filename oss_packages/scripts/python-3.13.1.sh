@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # name of directory after extracting the archive in working directory
-PKG_DIR="Python-3.13.0"
+PKG_DIR="Python-3.13.1"
 
 # name of the archive in dl directory
 PKG_ARCHIVE_FILE="${PKG_DIR}.tar.xz"
@@ -11,7 +11,7 @@ PKG_ARCHIVE_FILE="${PKG_DIR}.tar.xz"
 PKG_DOWNLOAD="https://m3-container.net/M3_Container/oss_packages/${PKG_ARCHIVE_FILE}"
 
 # md5 checksum of archive in dl directory
-PKG_CHECKSUM="086de5882e3cb310d4dca48457522e2e48018ecd43da9cdf827f6a0759efb07d"
+PKG_CHECKSUM="9cf9427bee9e2242e3877dd0f6b641c1853ca461f39d6503ce260a59c80bf0d9"
 
 
 
@@ -40,12 +40,9 @@ configure()
     cd "${PKG_BUILD_DIR}"
     ./configure \
         --prefix="${PYTHON_HOST}" \
-        --with-computed-gotos \
-        --without-ensurepip \
+        --with-ensurepip=no \
         --without-lto \
-        --without-doc-strings \
         --disable-test-modules \
-        --disable-shared \
 		--without-readline \
 		--disable-optimizations \
         || exit_failure "failed to configure Python for host"
@@ -68,7 +65,7 @@ configure()
     ac_cv_file__dev_ptc=no \
     ac_cv_file__dev_ptmx=no \
     ax_cv_c_float_words_bigendian=no \
-    CFLAGS="${M3_CFLAGS} -I${STAGING_INCLUDE}" \
+    CFLAGS="${M3_CFLAGS} -I${STAGING_INCLUDE} -Wno-implicit-function-declaration" \
     CPPFLAGS="${CFLAGS}" \
     LDFLAGS="${M3_LDFLAGS} -L${STAGING_LIB}" \
     CXX="" \
@@ -77,10 +74,7 @@ configure()
         --host="${M3_TARGET}" \
         --build=i686-pc-linux-gnu \
         --enable-ipv6 \
-        --enable-shared \
-        --with-computed-gotos \
         --with-lto \
-        --without-doc-strings \
         --with-ssl-default-suites=openssl \
         --disable-test-modules \
         --with-openssl="${STAGING_DIR}" \

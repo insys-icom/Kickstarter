@@ -30,7 +30,7 @@ configure()
     cd "${PKG_BUILD_DIR}"
     export CFLAGS="${M3_CFLAGS} -L${STAGING_LIB} -I${STAGING_INCLUDE}"
     export LDFLAGS="${M3_LDFLAGS} -L${STAGING_LIB}"
-    ./configure --target=${M3_TARGET} --host=${M3_TARGET} --prefix=""
+    ./configure --target=${M3_TARGET} --host=${M3_TARGET} --prefix="" --program-prefix=""
 }
 
 compile()

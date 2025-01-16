@@ -30,7 +30,8 @@ class Kickstart():
         self.__config = {}                 # contains config for this backend
         self.__profile = {}                # contains profile, what user wants to put onto devices
         self.__fw_version = "---"          # the firmware we are currently flashing onto devices
-        self.__uds = '/devices/cli_no_auth/cli.socket' # path to the UDS that gives unauthorized access to the CLI
+        self.__device_info = '/devices/device_info.json'  # path to detect, if this is an INSYS device
+        self.__uds = '/devices/cli_no_auth/cli.socket'    # path to the UDS that gives unauthorized access to the CLI
 
         # create Logger
         self.__create_logger("kickstarter")
@@ -121,6 +122,10 @@ class Kickstart():
     # find out or own link lokal IP address on the configured eth interface
     def __find_own_ip(self):
         ips = []
+        if not os.path.exists(self.__device_info):
+            # own IP address only relevant when kickstarter runs on an INSYS device
+            return None
+
         if not os.path.exists(self.__uds):
             self.__logger.info("Unable to get own IP addresses - is unauthorized access to CLI active?")
             self.__mqtt.msg_alert('This container needs access to the router CLI without authentication, at least the user group "Status"')
@@ -247,9 +252,16 @@ class Kickstart():
 
         # ignore own IPs from this devices
         own_ips = []
-        while len(own_ips) < 1:
+        while True:
             own_ips = self.__find_own_ip()
-            sleep(10)
+            if own_ips is None:
+                break;
+
+            if len(own_ips) < 1:
+                sleep(10)
+            else:
+                break
+
         for i in own_ips:
             ignore_ips.append(i)
 
