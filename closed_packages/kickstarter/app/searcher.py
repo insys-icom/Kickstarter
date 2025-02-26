@@ -32,7 +32,7 @@ class Searcher(Thread):
         out = neigh.communicate()
         ips = []
         for line in str(out).split("\\n"):
-            if "fe80::205:b6ff:fe" in line:
+            if "fe80::205:b6ff:fe" in line or "fe80::728b:97ff:fe" in line :
                 if not line.startswith("fe80::"):
                     line = f'fe80::{line.split("fe80::")[1]}'
                 ip = line.split(" ")[0]

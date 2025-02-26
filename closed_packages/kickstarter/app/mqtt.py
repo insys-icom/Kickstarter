@@ -26,7 +26,7 @@ class Mqtt(logging.Handler):
         self.__logger.info('Starting MQTT client')
 
         self.__queue = queue
-        self.__logfile          = profile["dirs"]["log"]
+        self.__logfile = profile["dirs"]["log"]
 
         self.__client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
         self.__client.on_connect = self.on_connect
