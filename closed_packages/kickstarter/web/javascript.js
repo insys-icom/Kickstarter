@@ -13,7 +13,7 @@ function start_mqtt() {
     const host = "ws://" + window.location.hostname + ":9001";
     const clientId = 'ws_' + Math.random().toString().substring(2)
     const options = {
-        keepalive: 10,
+        keepalive: 30,
         clientId,
         protocolId: 'MQTT',
         protocolVersion: 5,
@@ -541,7 +541,7 @@ function filechooser(event) {
                 uploading.name = theFile.name;
                 uploading.type = theFile.type;
                 uploading.size = theFile.size;
-                uploading.content = e.target.result
+                uploading.content = e.target.result;
                 send_message(JSON.stringify(uploading), top_topic + "/upload");
             };
         })(f);
