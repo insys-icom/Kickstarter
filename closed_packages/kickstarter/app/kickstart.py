@@ -345,7 +345,7 @@ class Kickstart():
 
             # read incoming message from device searcher
             msg = self.__get_queue_messages(self.__queue_searcher)
-            if msg:
+            if msg is not None:
                 ips = msg
 
             # read incoming message from downloader
@@ -358,6 +358,8 @@ class Kickstart():
                 if self.__profile["firmware"]["filename"] == "latest":
                     self.__path_firmware = ret
                     self.__profile["firmware"]["filename"] = ret
+
+            sleep(1)
 
 def main():
     Kickstart()
