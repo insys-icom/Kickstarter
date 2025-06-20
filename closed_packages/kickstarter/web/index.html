@@ -117,15 +117,17 @@
         </table>
     </div>
 
+    <div class="box box_save">
+        <h3>Save settings</h3>
+        <input id="store_settings" onclick="store_settings()" name="store_settings" type="button" value="Save" disabled>
+    </div>
+
     <div class="box box_files">
         <h3>Stored files</h3>
         <table class="list_table" id="filetable"></table>
         <br>
     </div>
-</left>
 
-<right>
-    <br>
     <div class="box box_upload">
         <h3>Uploading files</h3>
         <label>
@@ -135,10 +137,10 @@
         <p id="files_uploading"></p>
     </div>
 
-    <div class="box box_save">
-        <h3>Save settings</h3>
-        <input id="store_settings" onclick="store_settings()" name="store_settings" type="button" value="Save" disabled>
-    </div>
+</left>
+
+<right>
+    <br>
 
     <div class="box box_status">
         <h3>Log</h3>

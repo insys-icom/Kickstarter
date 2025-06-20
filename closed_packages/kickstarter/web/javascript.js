@@ -132,11 +132,9 @@ function view_boxes(menu) {
 
         case "settings":
             settings_display = "block";
-            upload_display = "block";
             save_display = "block";
 
             settings_visibility = "visible";
-            upload_visibility = "visible";
             save_visibility = "visible";
             break;
 
