@@ -1,4 +1,4 @@
-<h3>Overview</h3>
+<h2>Overview</h2>
 
 <p>Kickstarter is an application that kickstarts/bootstraps other INSYS icom OS devices in parallel.</p>
 <ul>
@@ -7,25 +7,23 @@
     <li>upload apply <b>ASCII configs</b></li>
     <li>upload individual settings from an <b>CSV file</b> depending on the devices serial number</li>
     <li>register the devices at <b>iRM (icom Router Management)</b> and configure the devices to use it</li>
+    <li>retrive and store data from the finished device in a file after all phases have been processed</li>
 </ul>
-
-<p>The devices to be kickstarted should run with default settings.
-    If that is not the case it may be possible, that Kickstarter can't access the REST-API of the device.</p>
 
 <p>Kickstarting also works in parallel!
     This is possible when all the devices are connected to the same net as Kickstarter by using a switch.</p>
 
 <p>Devices to be kickstarted will be detected and displayed in a list.
-    Their IPv6 address will be displayed as an hyper link, so you may connect to their UI and check the results of the kickstarting process.</p>
+    Their IPv6 address will be displayed as hyper link, so you may connect to their UI and check the results of the kickstarting process.</p>
 
-<p>The Kickstarter container will need unauthorized access to the CLI of the router.
+<p>The Kickstarter container will need unauthorized access to the CLI of the router (host), on which it is running.
     At least the &quot;Status&quot; access rights are needed.
-    This is necessary to find out the routers own IP addresses to avoid kickstarting the router, on which the container is running.</p>
+    This is necessary to find out the hosts IP address and avoid kickstarting the host.</p>
 
 <p>The column &quot;action&quot; will display the current kickstarting action in process.
     In case the &quot;action&quot; is &quot;---&quot; the kickstaring has been finished.</p>
 
-<p>Devices with an &quot;INFO LED&quot; will also display the progress of the kicstarting process</p>
+<p>Devices with an &quot;INFO LED&quot; will also display the progress of the kickstarting process</p>
 <ul>
     <li>INFO LED <b>blinking</b>: a new detected devices has been detected, kickstarting started</li>
     <li>INFO LED <b>on</b>: kickstarting process has finishied</li>
@@ -36,7 +34,7 @@
     The full log is available as file after logging into the container in the file &quot;/data/log/kickstarter/current&quot;.
     The log file will be rotated and archived after its size reached 1 MByte.</p>
 
-<h5>SSH</h5>
+<h4>SSH</h4>
 <p>There exist two users:</p>
 <ul>
     <li>User name &quot;root&quot; / password &quot;root&quot;</li>

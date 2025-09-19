@@ -19,6 +19,11 @@
     },
 
     "profile": {
+        "initial_login": {
+            "username": "",
+            "password": ""
+        },
+
         "auto-update": {
             "active": false,
             "uri": "https://autoupdate.insys-tec.net/m3/list_files/bleeding_full.txt",
@@ -46,6 +51,35 @@
         "ics": {
             "active": false,
             "uri": ""
-        }
+        },
+
+        "aftercare": {
+            "active": false,
+            "login": {
+                "username": "",
+                "password": ""
+            },
+            "logfile": "detected_devices.json",
+            "csvfile": "detected_devices.csv",
+            "csv_delimiter": ";",
+            "requests": [
+                {
+                    "name": "serial_number",
+                    "request": "/api/v2_0/status/device_info",
+                    "jsonpath": "status.list[0].serial_number"
+                },
+                {
+                    "name": "icomOS",
+                    "request": "/api/v2_0/status/device_info",
+                    "jsonpath": "status.list[0].firmware_version"
+                },
+                {
+                    "name": "flash",
+                    "request": "/api/v2_0/status/sysdetail/system",
+                    "jsonpath": "status.unique.flash_status",
+                    "expected": "OK"
+                }
+            ]
+		}
     }
 }

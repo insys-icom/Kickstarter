@@ -21,7 +21,7 @@ class File():
             os.makedirs(self.__filepath)
 
         # start observing the locally stored files in a thread
-        _thread = threading.Thread(target=self.__wrap_async_func, args=[self.__hashpath])
+        _thread = threading.Thread(target=self.__wrap_async_func, args=[self.__filepath])
         _thread.start()
 
     def __wrap_async_func(self, args):
@@ -62,10 +62,11 @@ class File():
             except Exception as e:
                 self.__logger.info(f"Could not delete file {msg["filename"]} : {str(e)}")
 
+            # ignore errors when deleting the HASH file; there is none when it's an self generated one
             try:
                 os.remove(self.__hashpath.joinpath(msg["filename"]))
             except Exception as e:
-                self.__logger.info(f"Could not delete hash file for file {msg["filename"]} : {str(e)}")
+                pass
 
             return True
         return False
@@ -86,7 +87,7 @@ class File():
         try:
             f = open(self.__hashpath.joinpath(file), "r", encoding="UTF-8")
         except Exception as e:
-            self.__logger.info(f"Could not read sha256sum of file {file} : {str(e)}")
+            #self.__logger.info(f"Could not read sha256sum of file {file} : {str(e)}")
             return h
 
         h = f.read()
@@ -124,6 +125,21 @@ class File():
             return s[0]
         else:
             return []
+
+    def rollate_aftercare_files(self, csv_path, log_path):
+        now = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
+
+        if (os.path.isfile(csv_path)):
+            directory = os.path.dirname(csv_path)
+            base = os.path.basename(csv_path)
+            result = Path(directory).joinpath(now + "_" + base)
+            os.rename(csv_path, result)
+
+        if (os.path.isfile(log_path)):
+            directory = os.path.dirname(log_path)
+            base = os.path.basename(log_path)
+            result = Path(directory).joinpath(now + "_" + base)
+            os.rename(log_path, result)
 
     async def __observe_dir(self, path):
         mask = Mask.DELETE | Mask.DELETE_SELF | Mask.CLOSE_WRITE

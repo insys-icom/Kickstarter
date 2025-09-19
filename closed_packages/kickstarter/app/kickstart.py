@@ -4,8 +4,10 @@ import signal
 import sys
 import os
 import json
+import csv
 import subprocess
 import argparse
+from pathlib import Path
 from queue import Empty, Queue
 import logging.handlers
 from time import sleep
@@ -27,9 +29,12 @@ class Kickstart():
         self.__existing_list = {}          # key: IP address, value: message struct
         self.__config_file = "config.json" # path to the config file
         self.__path_firmware = ''          # path to currently used firmware file
+        self.__path_aftercare = None       # path to data with aftercare data
+        self.__path_csv = None             # path to data containing the aftercare data as CSV
         self.__config = {}                 # contains config for this backend
         self.__profile = {}                # contains profile, what user wants to put onto devices
         self.__fw_version = "---"          # the firmware we are currently flashing onto devices
+        self.__aftercare_data = {}         # all known data from aftercare phases
         self.__device_info = '/devices/device_info.json'  # path to detect, if this is an INSYS device
         self.__uds = '/devices/cli_no_auth/cli.socket'    # path to the UDS that gives unauthorized access to the CLI
 
@@ -77,6 +82,17 @@ class Kickstart():
         # clear alarm topic
         self.__mqtt.msg_alert('')
 
+        # set a few path variables
+        if 'aftercare' in self.__profile:
+            if 'logfile' in self.__profile['aftercare']:
+                self.__path_aftercare = Path(self.__config['dirs']['files']).joinpath(self.__profile['aftercare']['logfile'])
+
+            if 'csvfile' in self.__profile['aftercare']:
+                self.__path_csv = Path(self.__config['dirs']['files']).joinpath(self.__profile['aftercare']['csvfile'])
+
+        # read all aftercare data from file
+        self.__read_aftercare_file()
+
         # start never ending main loop
         self.__mainloop()
 
@@ -95,6 +111,72 @@ class Kickstart():
             sys.exit(-1)
 
         self.__profile = self.__config["profile"]
+
+    # get history of all finished devices from file
+    def __read_aftercare_file(self):
+        if self.__path_aftercare is None:
+            return False
+
+        if not "aftercare" in self.__profile:
+            return True
+        if not "active" in self.__profile["aftercare"]:
+            return True
+        if not "logfile" in self.__profile["aftercare"]:
+            return True
+
+        try:
+            file = open(self.__path_aftercare, "r", encoding='UTF-8')
+            self.__aftercare_data = json.load(file)
+            file.close()
+        except Exception as e:
+            return False
+
+        self.__mqtt.msg_aftercare_devices(len(self.__aftercare_data))
+
+    # append info of aftercare phase to log file
+    def __append_aftercare_data(self, message):
+        if self.__path_aftercare is None:
+            return False
+
+        if not 'aftercare' in message:
+            return False
+
+        self.__aftercare_data[message['ip']] = message['aftercare']
+
+        try:
+            json.dump(self.__aftercare_data, open(self.__path_aftercare, 'w', encoding='UTF-8'), indent=4)
+        except Exception as e:
+            self.__logger.info("Could not store JSON file: " + str(e))
+            return False
+
+        self.__mqtt.msg_aftercare_devices(len(self.__aftercare_data))
+
+        return True
+
+    # export the aftercare data into a CSV file
+    def __create_csv_file(self):
+        if self.__path_csv is None:
+            return False
+
+        delimiter = ";"
+        if 'csv_delimiter' in self.__profile['aftercare']:
+            delimiter = self.__profile['aftercare']['csv_delimiter']
+        csv.register_dialect('insys', delimiter=delimiter)
+
+        fieldnames = []
+        for i in self.__aftercare_data:
+            fieldnames = self.__aftercare_data[i].keys()
+            break
+
+        with open(self.__path_csv, 'w', newline='', encoding='utf-8') as outfile:
+            writer = csv.DictWriter(outfile, fieldnames=fieldnames, dialect='insys')
+            writer.writeheader()
+
+            # apppend lines
+            for i in self.__aftercare_data:
+                writer.writerow(self.__aftercare_data[i])
+
+        return True
 
     # find the firmware file name, that should be flashed
     def __get_firmwarefile_name(self):
@@ -208,6 +290,9 @@ class Kickstart():
         # update list of locally stored files
         self.__file.read_local_files()
 
+        # send number of finished devices in aftercare file
+        self.__mqtt.msg_aftercare_devices(len(self.__aftercare_data))
+
     # interprete an incoming MQTT message
     def __do_mqtt_message(self, msg):
         # a new client connected and needs info
@@ -242,6 +327,16 @@ class Kickstart():
 
             elif m.topic == Topics.DELETE_FILE.fullpath():
                 self.__file.delete_file(json.loads(m.payload))
+
+            elif m.topic == Topics.AFTERCARE_RESET.fullpath():
+                self.__logger.info("Starting new aftercare files due to restart signal")
+                self.__file.rollate_aftercare_files(self.__path_csv, self.__path_aftercare)
+                self.__file.read_local_files()
+
+                # send number of finished devices in aftercare file, should be 0 now
+                self.__aftercare_data = {}
+                self.__mqtt.msg_aftercare_devices(len(self.__aftercare_data))
+
 
     # never ending main loop
     def __mainloop(self):
@@ -305,9 +400,14 @@ class Kickstart():
                 try:
                     message = self.__queue_devices[ip].get(block=False)
                     self.__queue_devices[ip].task_done()
-                    if message:
-                        self.__existing_list[ip] = message
+                    if message is not None:
                         mqtt_update = True
+                        self.__existing_list[ip] = message
+                        if message["aftercare"] is not None:
+                            self.__append_aftercare_data(message)
+                            self.__create_csv_file()
+                            self.__file.read_local_files()
+
                 except:
                     pass
 

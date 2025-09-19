@@ -8,16 +8,18 @@ class TopicType(StrEnum):
         return 'kickstarter/' + self.value
 
 class Topics(TopicType):
-    STATUS      = 'status'
-    LOG         = 'log'
-    DEVICES     = 'devices'
-    FW_LATEST   = 'fw_latest'
-    PROFILE     = 'profile'
-    PROFILE_UP  = 'profile_up'
-    UPLOAD      = 'upload'
-    LOCALFILES  = 'localfiles'
-    DELETE_FILE = 'delete_file'
-    ALERT       = 'alert'
+    STATUS          = 'status'
+    LOG             = 'log'
+    DEVICES         = 'devices'
+    FW_LATEST       = 'fw_latest'
+    PROFILE         = 'profile'
+    PROFILE_UP      = 'profile_up'
+    UPLOAD          = 'upload'
+    LOCALFILES      = 'localfiles'
+    DELETE_FILE     = 'delete_file'
+    ALERT           = 'alert'
+    AFTERCARE       = 'aftercare'
+    AFTERCARE_RESET = 'aftercare_reset'
 
 class Mqtt(logging.Handler):
     def __init__(self, logger, queue, profile):
@@ -55,6 +57,7 @@ class Mqtt(logging.Handler):
         client.subscribe(Topics.UPLOAD.fullpath())
         client.subscribe(Topics.PROFILE_UP.fullpath())
         client.subscribe(Topics.DELETE_FILE.fullpath())
+        client.subscribe(Topics.AFTERCARE_RESET.fullpath())
 
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, msg):
@@ -92,6 +95,9 @@ class Mqtt(logging.Handler):
 
     def msg_local_files(self, local_files):
         return self.__client.publish(Topics.LOCALFILES.fullpath(), payload=json.dumps(local_files), retain=True)
+
+    def msg_aftercare_devices(self, aftercare_devices):
+        return self.__client.publish(Topics.AFTERCARE.fullpath(), payload=aftercare_devices, retain=True)
 
     def msg_alert(self, text):
         return self.__client.publish(Topics.ALERT.fullpath(), payload=text, retain=False)

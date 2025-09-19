@@ -44,16 +44,48 @@
     <div class="box box_status">
         <h3>Status</h3>
         <p style="color:red;" id="alert"></p>
-        <table class="list_table">
-            <tr><td>MQTT-Broker</td><td class="status_mqtt_broker">Not online</td><td></td></tr>
-            <tr><td>Kickstarter</td><td class="status_kickstarter">Not online</td><td></td></tr>
-            <tr><td>Writing firmware</td><td id="fw_latest">---</td></tr>
-        </table>
+            <table><tr style="vertical-align: top;">
+                <td>
+                    <table class="list_table">
+                        <tr><td>MQTT broker</td><td class="status_mqtt_broker">Not online</td></tr>
+                        <tr><td>Kickstarter</td><td class="status_kickstarter">Not online</td></tr>
+                        <tr><td>Writing firmware</td><td id="fw_latest">---</td></tr>
+                    </table>
+                </td>
+                <td>&nbsp;&nbsp;&nbsp;</td>
+                <td>
+                    <table class="list_table">
+                        <tr><td>Entries in aftercare file</td>
+                            <td id="aftercare_entries">---</td>
+                        </tr>
+                        <tr><td>Start new aftercare file</td>
+                            <td><input id="aftercare_reset" onclick="aftercare_reset()"
+                                       name="aftercare_reset" type="button" value="Restart"></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr></table>
+        </div>
     </div>
 
     <div class="box box_status">
-        <h3>Detected devices</h3>
+        <h3 id="detected_devices">Detected devices</h3>
         <table class="list_table" id="devicetable"></table>
+    </div>
+
+    <div class="box box_settings">
+        <h3>Initial login</h3>
+        <p>Only necessary if devices are not in default settings</p>
+        <table>
+            <tr>
+                <td>User name for device login</td>
+                <td><input id="initial_login_username" name="initial_login_username" type="text" size=45></td>
+            </tr>
+            <tr>
+                <td>Password for device login</td>
+                <td><input id="initial_login_password" name="initial_login_password" type="text" size=45></td>
+            </tr>
+        </table>
     </div>
 
     <div class="box box_settings">
@@ -100,7 +132,7 @@
         <table>
             <tr>
                 <td>Activate registration of device</td>
-                <td><input id="irm_active" name="irm_active" type="checkbox" onchange="change_irm_active()"></td>
+                <td><input id="irm_active" name="irm_active" type="checkbox"></td>
             </tr>
             <tr>
                 <td>URI of iRM API</td>
@@ -115,6 +147,38 @@
                 <td><input id="irm_group" name="irm_group" type="text" size=55></td>
             </tr>
         </table>
+    </div>
+
+    <div class="box box_settings">
+        <h3>Aftercare: HTTP(S) requests to the finished devices</h3>
+        <table>
+            <tr>
+                <td>Activate aftercard</td>
+                <td><input id="aftercare_active" name="aftercare_active" type="checkbox"></td>
+            </tr>
+            <tr>
+                <td>User name for device login</td>
+                <td><input id="aftercare_login_username" name="aftercare_login_username" type="text" size=45></td>
+            </tr>
+            <tr>
+                <td>Password for device login</td>
+                <td><input id="aftercare_login_password" name="aftercare_login_password" type="text" size=45></td>
+            </tr>
+            <tr>
+                <td>Name for log file</td>
+                <td><input id="aftercare_logfile" name="aftercare_logfile" type="text" size=45</td>
+            </tr>
+            <tr>
+                <td>Name for CSV file</td>
+                <td><input id="aftercare_csvfile" name="aftercare_csvfile" type="text" size=45</td>
+            </tr>
+            <tr>
+                <td>CSV delimiter character</td>
+                <td><input id="aftercare_csv_delimiter" name="aftercare_csv_delimiter" value=";" type="text" size=1</td>
+            </tr>
+        </table>
+        <br>
+        <table id="aftercare_table"></table>
     </div>
 
     <div class="box box_save">
@@ -136,7 +200,6 @@
         <br>
         <p id="files_uploading"></p>
     </div>
-
 </left>
 
 <right>

@@ -1,11 +1,13 @@
-<h3>Settings</h3>
+<h2>Settings</h2>
 
 <p>All modifications to the settings only get permanently stored, when the <b>&quot;Save&quot;</b> button is used!</p>
 
 <h5>Setting the time</h5>
-<p>After a new detected router can get accessed, the time of the router will get set to the time, that is set on the router with the Kickstarter container.
-    The time zone is not set yet, because this could be done in a later configuration step.
-    However the set time without the correctly set time zone should be good enough for the later configuration process, so certificates are in their valid live span.</p>
+<p>After a new detected router can get accessed, the time of the router will get set to the time, that is set on the router with the Kickstarter container.</p>
+
+<h5>Initial login</h5>
+<p>Setting the initial login credentials are not necessary when the devices are in default settings. If the devices are not in default settings, these credentials are used.
+   If login with no credentials or the credentials given here are both failing, the credentials from the aftercare phase (see below) will be used.</p>
 
 <h5>Uploading Firmware</h5>
 <p>All detected routers will get optionally updated to the configured firmware.
@@ -69,3 +71,47 @@
 
 <p>It's also required to configure a group, in which all newly registrated devices will appear.
     It might be reasonable to define a new group for all the new devices, so they can get pushed to their final group in iRM, after there happend more configuration within iRM.</p>
+
+<pre>
+curl -k -X 'POST' 'https://192.168.1.1/api/v2_0/auth/login' \
+    -H 'accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d '{ "username": "insys", "password": "icom" }'
+</pre>
+
+<h5>Aftercare: HTTP(S) requests to the finished devices</h5>
+<p>After a device ran through all the phases described above the optional aftercare phase will query information from the deivces.
+This info gets stored in a file, so the user has documentation about the processed devices.</p>
+
+<p>Kickstarter will send HTTPS requests to the devices, which most likely have been configured in the above phases, so a user name and a password have to be known to Kickstarter.</p>
+<p>The answers to the HTTPS requests will be stored in a log file, the content is JSON. Additionally the info is stored in a CSV file. The given delimiter character is used to separate the columns in the CSV file.</p>
+
+<p>Every request sent to the device is defined by:</p>
+<ul>
+    <li><b>CSV column name:</b>	The response of the requests is stored in column of the CSV file with this header name.</li>
+    <li><b>Request URI:</b> This string will be appended to he IPv6 address of the queried device and sent to the device.</li>
+    <li><b>JSONPATH to data:</b> The JSONPATH defines the path within the JSON formated answer of the request, that leads to the data, that should be stored in the log and CSV file.</li>
+    <li><b>Expected result of request:</b> Optionally the data of the answer can be compared to this defined string in order to check, that the above phases were actually successful.</li>
+</ul>
+
+The necessary request URI can be found by using a tool like <a href="https://www.usebruno.com/">bruno</a> or a online service like <a href="https://editor.swagger.io/">editor.swagger.io</a>. Import the <a href="https://192.168.1.1/cgi_c_download_rest_docu">REST-API documentation</a> into the chosen tool and find out the necessary URI and the returned data.</p>
+
+<p>
+
+<pre>
+curl -k -X 'POST' 'https://192.168.1.1/api/v2_0/operation' \
+    -H 'accept: */*' \
+    -H 'Authorization: Bearer eyJhbGciO ... R5cCIX3a8' \
+    -H 'Content-Type: application/json' \
+    -d '{
+            "method": "manual_action",
+            "params": {
+                "type": "sms",
+                "options": {
+                    "modem": "lte2",
+                    "recipient": "012345678",
+                    "text": "This is SMS text"
+                }
+            }
+        }'
+</pre>

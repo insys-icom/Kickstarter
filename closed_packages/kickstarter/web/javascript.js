@@ -54,6 +54,7 @@ function on_message(topic, message) {
         interprete_profile();
     }
     else if (topic == (top_topic + "/fw_latest")) { document.getElementById("fw_latest").innerHTML = mes; }
+    else if (topic == (top_topic + "/aftercare")) { document.getElementById("aftercare_entries").innerHTML = mes; }
     else if (topic == (top_topic + "/log"))       { print_log(mes, "log_kickstarter"); }
     else if (topic == (top_topic + "/alert"))
     {
@@ -72,6 +73,8 @@ function on_message(topic, message) {
             device_Table(table, devices);
             device_Table_Head(table, devices[0]);
         }
+        var count = Object.keys(devices).length;
+        document.getElementById("detected_devices").innerHTML = "Detected devices: " + count;
     }
     else if (topic == (top_topic + "/localfiles")) {
         for (var member in localfiles) delete localfiles[member];
@@ -205,8 +208,8 @@ function device_Table(table, json) {
                 if (line[key]) {
                     let img = document.createElement('img');
                     img.src = 'pics/spinner.gif';
-                    img.style.width = '15px';
-                    img.style.height = '15px';
+                    img.style.width = '13px';
+                    img.style.height = '13px';
                     img.style.margin = '0';
                     img.style.padding = '0';
                     row.insertCell().appendChild(img);
@@ -219,7 +222,6 @@ function device_Table(table, json) {
                 var text = line[key]
                 if (i == 3) {
                     var a = document.createElement('a');
-                    // TODO: link zur klassischen UI wieder rausnehmen
                     a.innerHTML = '<a href="https://' + text + "/cgi_s_status" +
                                 '" target="__new_window">' + text.substring(1, text.length - 1) +
                                 '</a>';
@@ -280,6 +282,24 @@ function display_stored_files() {
             let row = table.insertRow();
             keys = Object.keys(line);
 
+            // print download icon
+            let dl = document.createElement("input");
+            dl.type = "image";
+            dl.className = "input_image";
+            dl.id = "dl_file";
+            dl.src = "pics/download.png";
+            dl.addEventListener('click', download_file.bind(null, line[keys[0]]));
+            row.insertCell().appendChild(dl);
+
+            // print delete icon (trash bin)
+            let del = document.createElement("input");
+            del.type = "image";
+            del.className = "input_image";
+            del.id = "del_file";
+            del.src = "pics/trash.png";
+            del.addEventListener('click', delete_file.bind(null, line[keys[0]]));
+            row.insertCell().appendChild(del);
+
             // print file name
             row.insertCell().appendChild(document.createTextNode(line[keys[0]]));
 
@@ -293,29 +313,11 @@ function display_stored_files() {
             sha256 = line[keys[3]]
             let s = "---";
             if (sha256.length > 3) {
-                s = sha256.substr(0, 6) + "...." + sha256.substr(sha256.length - 6, sha256.length);
+                s = sha256.substr(0, 6) + "....";// + sha256.substr(sha256.length - 6, sha256.length);
             }
             row.insertCell().appendChild(document.createTextNode(s));
-            row.lastChild.style = "cursor:pointer;";
+            row.lastChild.style = "cursor:pointer";
             row.lastChild.title = sha256;
-
-            // append delete icon (trash bin)
-            let del = document.createElement("input");
-            del.type = "image";
-            del.className = "input_image";
-            del.id = "del_file";
-            del.src = "pics/trash.png";
-            del.addEventListener('click', delete_file.bind(null, line[keys[0]]));
-            row.insertCell().appendChild(del);
-
-            // append download icon
-            let dl = document.createElement("input");
-            dl.type = "image";
-            dl.className = "input_image";
-            dl.id = "dl_file";
-            dl.src = "pics/download.png";
-            dl.addEventListener('click', download_file.bind(null, line[keys[0]]));
-            row.insertCell().appendChild(dl);
 
             // remove item from fragment list, because it has been stored permanently
             var i = 0;
@@ -334,6 +336,14 @@ function display_stored_files() {
         let row = thead.insertRow();
 
         var th = document.createElement("th");
+        th.appendChild(document.createTextNode(""));
+        row.appendChild(th);
+
+        var th = document.createElement("th");
+        th.appendChild(document.createTextNode(""));
+        row.appendChild(th);
+
+        var th = document.createElement("th");
         th.appendChild(document.createTextNode("File name"));
         row.appendChild(th);
 
@@ -342,7 +352,7 @@ function display_stored_files() {
         row.appendChild(th);
 
         var th = document.createElement("th");
-        th.appendChild(document.createTextNode("Last modified date"));
+        th.appendChild(document.createTextNode("Last modified"));
         row.appendChild(th);
 
         var th = document.createElement("th");
@@ -505,6 +515,10 @@ function interprete_profile() {
     display_firmware_to_write();
     display_config_to_write();
     display_upload();
+    display_aftercare_requests();
+
+    document.getElementById('initial_login_username').value = profile["initial_login"]["username"];
+    document.getElementById('initial_login_password').value = profile["initial_login"]["password"];
 
     document.getElementById('check_active').checked = profile["auto-update"]["active"];
     document.getElementById('check_uri').value = profile["auto-update"]["uri"];
@@ -515,7 +529,12 @@ function interprete_profile() {
     document.getElementById('irm_token').value = profile["irm"]["token"];
     document.getElementById('irm_group').value = profile["irm"]["group"];
 
-    //document.getElementById('timezone_to_write').value = profile["time"]["timezone"];
+    document.getElementById('aftercare_active').checked       = profile["aftercare"]["active"];
+    document.getElementById('aftercare_login_username').value = profile["aftercare"]["login"]["username"];
+    document.getElementById('aftercare_login_password').value = profile["aftercare"]["login"]["password"];
+    document.getElementById('aftercare_logfile').value        = profile["aftercare"]["logfile"];
+    document.getElementById('aftercare_csvfile').value        = profile["aftercare"]["csvfile"];
+    document.getElementById('aftercare_csv_delimiter').value  = profile["aftercare"]["csv_delimiter"];
 }
 
 // create "browse" and upload button
@@ -564,7 +583,9 @@ function enable_elements(yesno) {
 
 // send MQTT message with profile to store
 function store_settings() {
-    //profile["time"]["timezone"] = document.getElementById('timezone_to_write').value;
+    profile["initial_login"]["username"] = document.getElementById('initial_login_username').value;
+    profile["initial_login"]["password"] = document.getElementById('initial_login_password').value;
+
     profile["firmware"]["filename"]     = document.getElementById('firmware_to_write').value;
     profile["config_table"]["filename"] = document.getElementById('config_to_write').value;
 
@@ -582,7 +603,7 @@ function store_settings() {
     var table = document.getElementById("upload_table");
     var rows = table.querySelectorAll("tr");
     rows.forEach(function(row) {
-        if (row.id.startsWith("del_upload_")) {
+        if (row.id.startsWith("del_table_entry_id_")) {
             var sel = row.cells[0].firstChild;
             var activate = row.cells[1].firstChild;
             uploads.push( { "filename": sel[sel.selectedIndex].text, "activate": activate.checked } );
@@ -590,7 +611,40 @@ function store_settings() {
     });
     profile["uploads"] = uploads;
 
+    // get all requests that should be sent in aftercare phase
+    profile["aftercare"]["active"]            = document.getElementById('aftercare_active').checked
+    profile["aftercare"]["login"]["username"] = document.getElementById('aftercare_login_username').value
+    profile["aftercare"]["login"]["password"] = document.getElementById('aftercare_login_password').value
+    profile["aftercare"]["logfile"]           = document.getElementById('aftercare_logfile').value
+    profile["aftercare"]["csvfile"]           = document.getElementById('aftercare_csvfile').value
+    profile["aftercare"]["csv_delimiter"]     = document.getElementById('aftercare_csv_delimiter').value
+    var requests = [];
+    var table = document.getElementById("aftercare_table");
+    var rows = table.querySelectorAll("tr");
+    rows.forEach(function(row) {
+        if (row.id.startsWith("del_aftercare_id_")) {
+            var inner_table = row.cells[1].firstChild;
+            var inner_rows = inner_table.querySelectorAll("tr");
+
+            var request = {};
+            if (inner_rows[0].cells[1].firstChild.value) { request["name"]     = inner_rows[0].cells[1].firstChild.value; }
+            if (inner_rows[1].cells[1].firstChild.value) { request["request"]  = inner_rows[1].cells[1].firstChild.value; }
+            if (inner_rows[2].cells[1].firstChild.value) { request["jsonpath"] = inner_rows[2].cells[1].firstChild.value; }
+            if (inner_rows[3].cells[1].firstChild.value) { request["expected"] = inner_rows[3].cells[1].firstChild.value; }
+            requests.push(request);
+        }
+    });
+    profile["aftercare"]["requests"] = requests;
+
     send_message(JSON.stringify(profile), top_topic + "/profile_up");
+
+    // scroll to the top to signal, that storing happened
+    window.scrollTo(0, 0);
+}
+
+// send command to reset the counter of processed devices and roll the log and csv file
+function aftercare_reset() {
+    send_message("1", top_topic + "/aftercare_reset");
 }
 
 // paint a table with all files that should be uploaded to the device
@@ -605,7 +659,7 @@ function display_upload() {
 
     var th = document.createElement("th");
     th.appendChild(document.createTextNode("File name"));
-    th.style = "text-align: left;";
+    th.style = "text-align: left";
     row.appendChild(th);
 
     var th = document.createElement("th");
@@ -614,16 +668,18 @@ function display_upload() {
 
     // paint all existing upload files
     if (Object.keys(localfiles).length) {
+        var i = 1;
         for (entry of profile["uploads"]) {
-            add_upload(entry, false);
+            add_upload(entry, i, false);
+            i++;
         }
     }
 
-    add_plus(table);
+    add_plus(table, i, "add_upload");
 }
 
 // add a table row containing a file, that should be uploaded to the device
-function add_upload(entry, paint_add) {
+function add_upload(entry, i, paint_add) {
     var table = document.getElementById("upload_table");
 
     // only insert a single new entry
@@ -635,7 +691,7 @@ function add_upload(entry, paint_add) {
     // paint the id to get the complete upload deleted
     let row = table.insertRow();
     let rand_id = Math.random().toString().substring(2)
-    row.id = "del_upload_" + rand_id;
+    row.id = "del_table_entry_id_" + rand_id;
 
     // first column: paint the selector with the files to upload
     let sel = document.createElement("select");
@@ -655,14 +711,14 @@ function add_upload(entry, paint_add) {
         activate.checked = true;
     }
     row.insertCell().appendChild(activate);
-    row.lastChild.style = "text-align: center;";
+    row.lastChild.style = "text-align: center";
 
     // third column: paint delete button (trash bin icon)
     let del = document.createElement("input");
     del.type = "image";
     del.className = "input_image";
     del.src = "pics/trash.png";
-    del.addEventListener('click', del_upload.bind(null, row.id));
+    del.addEventListener('click', del_table_entry_id.bind(null, row.id));
     row.insertCell().appendChild(del);
 
     // fourth column: paint download button
@@ -679,12 +735,134 @@ function add_upload(entry, paint_add) {
     }
 
     if (paint_add) {
-        add_plus(table);
+        add_plus(table, i + 1, "add_upload");
     }
 }
 
+// paint a table with all requests to be sent in aftercare phase
+function display_aftercare_requests() {
+    let table = document.querySelector("#aftercare_table");
+    table.setAttribute('class', 'list_table');
+    table.innerHTML = "";
+
+    // paint table header
+    let thead = table.createTHead();
+    let row = thead.insertRow();
+
+    var th = document.createElement("th");
+    th.appendChild(document.createTextNode("Aftercare requests"));
+    th.style = "text-align: left";
+    th.colSpan = 2;
+    row.appendChild(th);
+
+    // paint all existing requests
+    if (Object.keys(localfiles).length) {
+        var i = 1;
+        for (entry of profile["aftercare"]["requests"]) {
+            add_aftercare_request(entry, i, false);
+            i++;
+        }
+    }
+
+    add_plus(table, i + 1, "add_aftercare_request");
+}
+
+// add a table row containing a new request, that should be sent in aftercare phase
+function add_aftercare_request(entry, i, paint_add) {
+    var table = document.getElementById("aftercare_table");
+
+    // only insert a single new entry
+    if (paint_add) {
+        // delete last row that contains the plus icon
+        table.deleteRow(table.rows.length -1);
+    }
+
+    // paint the id to get the complete upload deleted
+    let row = table.insertRow();
+    let rand_id = Math.random().toString().substring(2)
+    row.id = "del_aftercare_id_" + rand_id;
+
+    // paint number of request
+    let empty = document.createTextNode("Request " + i);
+    var cell = row.insertCell(0);
+    cell.style = "vertical-align: middle";
+    cell.appendChild(empty);
+    row.appendChild(cell);
+
+    // paint a table with the request details
+    row.insertCell().appendChild(add_aftercare_request_element(rand_id, entry));
+
+    // delete button (trash bin icon)
+    let del = document.createElement("input");
+    del.type = "image";
+    del.className = "input_image";
+    del.src = "pics/trash.png";
+    del.addEventListener('click', del_table_entry_id.bind(null, row.id));
+    var cell = row.insertCell(0);
+    cell.style = "vertical-align: middle";
+    cell.appendChild(del);
+    row.appendChild(cell);
+
+    if (paint_add) {
+        add_plus(table, i + 1, "add_aftercare_request");
+    }
+}
+
+// add the details of a single aftercare request
+function add_aftercare_request_element(rand_id, entry) {
+    let tab = document.createElement("table");
+    tab.setAttribute('class', 'list_table_no_border');
+    let cellsize = 35;
+
+    // name of request
+    var tabrow = tab.insertRow();
+    tabrow.insertCell().appendChild(document.createTextNode("CSV column name"));
+    var cell = document.createElement("input");
+    cell.type = text;
+    cell.size = cellsize;
+    if (entry["name"]) { cell.value = entry["name"]; }
+    cell.id = "request_name_" + rand_id;
+    cell.name = cell.id;
+    tabrow.insertCell().appendChild(cell);
+
+    // URI of request
+    var tabrow = tab.insertRow();
+    tabrow.insertCell().appendChild(document.createTextNode("Request URI"));
+    var cell = document.createElement("input");
+    cell.type = text;
+    cell.size = cellsize;
+    if (entry["request"]) { cell.value = entry["request"]; }
+    cell.id = "request_uri_" + rand_id;
+    cell.name = cell.id;
+    tabrow.insertCell().appendChild(cell);
+
+    // jsonpath of request
+    var tabrow = tab.insertRow();
+    tabrow.insertCell().appendChild(document.createTextNode("JSONPATH to data"));
+    var cell = document.createElement("input");
+    cell.type = text;
+    cell.size = cellsize;
+    if (entry["jsonpath"]) { cell.value = entry["jsonpath"]; }
+    cell.id = "request_jsonpath_" + rand_id;
+    cell.name = cell.id;
+    tabrow.insertCell().appendChild(cell);
+
+    // expected of request
+    var tabrow = tab.insertRow();
+    tabrow.insertCell().appendChild(document.createTextNode("Expected result of request"));
+    var cell = document.createElement("input");
+    cell.type = text;
+    cell.size = cellsize;
+    if (entry["expected"]) { cell.value = entry["expected"]; }
+    cell.id = "request_expected_" + rand_id;
+    cell.name = cell.id;
+    tabrow.insertCell().appendChild(cell);
+
+    return tab;
+}
+
 // add a table row with only a plus button for new entries
-function add_plus(table) {
+function add_plus(table, i, id_text) {
     var row = table.insertRow();
     row.insertCell().appendChild(document.createTextNode(""));
     row.insertCell().appendChild(document.createTextNode(""));
@@ -693,14 +871,21 @@ function add_plus(table) {
     let add = document.createElement("input");
     add.type = "image";
     add.className = "input_image";
-    add.id = "add_upload";
+    add.id = id_text;
     add.src = "pics/plus.png";
-    add.addEventListener('click', add_upload.bind(null, "", true));
+    if (id_text === "add_upload") {
+        add.addEventListener('click', add_upload.bind(null, i, "", true));
+    }
+    else if (id_text === "add_aftercare_request") {
+
+        add.addEventListener('click', add_aftercare_request.bind(null, i, "", true));
+    }
+
     row.insertCell().appendChild(add);
 }
 
-// delete a table row containing a file, that should be uploaded to the device
-function del_upload(id) {
+// delete an entry in a endless table
+function del_table_entry_id(id) {
     var row = document.getElementById(id);
     row.parentNode.removeChild(row);
 }

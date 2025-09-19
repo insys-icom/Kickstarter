@@ -1,12 +1,13 @@
+import tempfile
+import os
+import csv
 from threading import Thread
 from time import monotonic, sleep
 import datetime
 from pathlib import Path
 import requests
 import urllib3
-import csv
-import tempfile
-import os
+import jsonpath
 from irm import Irm
 
 class Updater(Thread):
@@ -31,26 +32,36 @@ class Updater(Thread):
             'board':    "---",
             'version':  "---",
             'ip':       self.__ip,
-            'action':   "---"
+            'action':   "---",
+            'aftercare': None
         }
 
         if firmware and int(len(firmware.split('-')) > 1):
             self.__firmware_version = firmware.split('-')[1]
 
     def run(self):
-        # log in
-        self.__message['action'] = "Log in at device"
         if self.__login_rest() is False:
-            self.__end_updating("off")
+            # maybe the device has already been run through and we are in aftercare phase,
+            # try the user from the a possibly activated profile
+            self.__message['action'] = 'Get info from device in aftercare phase'
+            self.__logger.info(f"Use login credentials of aftercare phase")
+            ret = self.__aftercare()
+            if ret is False:
+                self.__end_updating("off")
+                return False
+            else:
+                self.__message['action'] = "---"
+                self.__message['aftercare'] = ret
+                self.__end_updating("on")
             return
 
         # get serialnumber of this device
         self.__message['action'] = "Get serial number"
         for _ in range(3):
-            self.__message['serial'], self.__message['version'], self.__message['board'] = self.__get_serial()
-            if self.__message['serial'] is None:
-                sleep(1)
-                continue
+            if self.__get_serial():
+                break
+            sleep(3)
+
         if self.__message['serial'] is None:
             self.__logger.error("No serial number found")
             self.__end_updating("off")
@@ -97,6 +108,15 @@ class Updater(Thread):
         if self.__register_irm() is False:
             self.__end_updating("off")
             return
+
+        # Aftercare phase: get info from finished device
+        self.__message['action'] = 'Get info from device in aftercare phase'
+        self.__queue.put(self.__message)
+        ret = self.__aftercare()
+        if ret is False:
+            self.__end_updating("off")
+            return
+        self.__message['aftercare'] = ret
 
         # no more action to be started
         self.__message['action'] = "---"
@@ -172,7 +192,6 @@ class Updater(Thread):
         while (monotonic() - start) < 60:
             sleep(1)
 
-            # log in again
             try:
                 logged_in = self.__login_rest(silent=True, timeout=5)
             except:
@@ -182,8 +201,7 @@ class Updater(Thread):
                 continue
 
             # get serialnumber of this device
-            self.__message['serial'], self.__message['version'], self.__message['board'] = self.__get_serial()
-            if self.__message['serial'] is None or self.__message['version'] is None or self.__message['board'] is None:
+            if self.__get_serial() is False:
                 continue
 
             if self.__message['version'] == self.__firmware_version:
@@ -193,10 +211,24 @@ class Updater(Thread):
         # we could not contact device any more
         return False
 
-    def __login_rest(self, username='insys', password='icom', silent=False, timeout=10):
+    def __login_rest(self, username=None, password=None, silent=False, timeout=10):
         url = f'https://{self.__ip}/api/v2_0/auth/login'
 
-        auth = { 'username': username, 'password': password }
+        if (username is None or password is None):
+            if "initial_login" in self.__profile and \
+                "username" in self.__profile["initial_login"] and \
+                "password" in self.__profile["initial_login"]:
+                    username = self.__profile["initial_login"]["username"]
+                    password = self.__profile["initial_login"]["password"]
+                    if username != "" and password  != "":
+                        auth = { 'username': username, 'password': password }
+                    else:
+                        auth = { 'username': 'insys', 'password': 'icom' }
+            else:
+                auth = { 'username': 'insys', 'password': 'icom' }
+        else:
+            auth = { 'username': username, 'password': password }
+
         try:
             response = self.__session.post(url=url, json=auth, timeout=timeout)
         except:
@@ -204,46 +236,82 @@ class Updater(Thread):
                 self.__logger.error(f"{self.__serialnumber}: Unable to do HTTP login")
             return False
 
+        logprefix = ""
+        if self.__serialnumber != "":
+            logprefix = f"{self.__serialnumber}: "
+
+        if response.status_code != 200:
+            if not silent:
+                self.__logger.info(f"{logprefix}Authentication failed")
+            return False
+
+        if not "access" in response.json():
+            if not silent:
+                self.__logger.info(f"{logprefix}No authorisation in session header")
+            return False
+
         self.__session.headers["Authorization"] = "Bearer " + response.json()['access']
+        self.__logger.info(f"{logprefix}Authentication succeeded")
+
         return True
+
+    def __login_rest_aftercare(self):
+        username = None
+        password = None
+        if "login" in self.__profile["aftercare"]:
+            if "username" in self.__profile["aftercare"]["login"] and "password" in self.__profile["aftercare"]["login"]:
+                username = self.__profile["aftercare"]["login"]["username"]
+                password = self.__profile["aftercare"]["login"]["password"]
+
+        return self.__login_rest(username=username, password=password)
 
     def __get_serial(self):
         url = f'https://{self.__ip}/api/v2_0/status/device_info'
         try:
             response = self.__session.get(url, verify=False, timeout=10)
         except Exception as e:
-            self.__logger.info(f"{self.__serialnumber}: Could not contact device to get serial number: {str(e)}")
-            return None, None, None
+            self.__logger.info(f"Could not contact device to get serial number: {str(e)}")
+            return False
 
         if response.status_code != 200:
-            self.__logger.info(f"{self.__serialnumber}: Could not get serial number of device: {response.status_code}")
-            return None, None, None
+            self.__logger.info(f"Could not get serial number of device: {response.status_code}")
+            return False
 
         try:
             serialnumber = response.json()["status"]["list"][0]["serial_number"]
-            if len(serialnumber) < 8:
-                return None, None, None
-        except:
-            return None, None, None
+        except Exception as e:
+            self.__logger.info(f"{self.__serialnumber}: Request for serial number failed: {str(e)}")
+            return False
+
+        if len(serialnumber) < 8:
+            self.__logger.info(f"{self.__serialnumber}: Serial number is too short")
+            return False
         self.__serialnumber = serialnumber
+        self.__message['serial'] = serialnumber
 
         try:
             version = response.json()["status"]["list"][0]["firmware_version"]
-            if len(version) < 3:
-                return None, None, None
-        except:
-            self.__logger.info(f"{self.__serialnumber}: JSON does not contain valid firmware version")
-            return None, None, None
+        except Exception as e:
+            self.__logger.info(f"{self.__serialnumber}: Request for firmware version failed: {str(e)}")
+            return False
+
+        if len(version) < 3:
+            self.__logger.info(f"{self.__serialnumber}: Version number is too short: {version}")
+            return False
+        self.__message['version'] = version
 
         try:
             board_type = response.json()["status"]["list"][0]["board_type"]
-            if len(board_type) < 3:
-                return None, None, None
-        except:
-            self.__logger.info(f"{self.__serialnumber}: JSON does not contain valid board type")
-            return None, None, None
+        except Exception as e:
+            self.__logger.info(f"{self.__serialnumber}: Request for board type failed: {str(e)}")
+            return False
 
-        return serialnumber, version, board_type
+        if len(board_type) < 3:
+            self.__logger.info(f"{self.__serialnumber}: Board type is too short: {board_type}")
+            return False
+        self.__message['board'] = board_type
+
+        return True
 
     def __get_firmware_list(self):
         url = f'https://{self.__ip}/api/v2_0/firmware'
@@ -464,17 +532,18 @@ class Updater(Thread):
 
         return False
 
-    def __perform_upload(self, response, activate=False):
+    def __perform_upload(self, orig_response, activate=False):
         url = f'https://{self.__ip}/api/v2_0/upload/perform'
+        timeout = 250
 
         payload = {
-            "identifier": response["identifier"],
+            "identifier": orig_response["identifier"],
             "profile": "Profile", # we assume, that we are in default settings"
             "entries": []
         }
 
         # walk over all entries of the analysed upload
-        for c in response['content']:
+        for c in orig_response['content']:
             # ignore invalid entries
             if c['valid'] is False:
                 continue
@@ -490,25 +559,38 @@ class Updater(Thread):
                     e['action'] = "apply"
 
             payload['entries'].append(e)
+            # Add up all maximal wait times
+            #timeout = timeout + x
 
         self.__logger.info(f'{self.__serialnumber}: Storing uploaded file')
-        for _ in range(3):
+        response = None
+        relogin = False
+        for _ in range(2):
+            if relogin:
+                if self.__login_rest() is False:
+                    sleep(30)
+                    if self.__login_rest() is False:
+                        if self.__login_rest_aftercare() is False:
+                            return False
             try:
-                response = self.__session.post(url, json=payload, verify=False, timeout=300)
+                response = self.__session.post(url, json=payload, verify=False, timeout=timeout)
             except:
+                self.__logger.info(f'{self.__serialnumber}: No response for perform request')
+                relogin = True
                 sleep(3)
-                continue
 
-            if response.status_code != 201:
-                self.__logger.info(f'{self.__serialnumber}: Storing uploaded file failed: {response.status_code}: {response.reason}, {response.json()}')
-                return False
-            break;
+            if response:
+                if response.status_code == 201:
+                    break
+                else:
+                    self.__logger.info(f'{self.__serialnumber}: Storing uploaded file failed: {response.status_code}: {response.reason}')
 
         # walk over entries of response
-        for x in response.json()['content']:
-            if x["result"] != "done":
-                self.__logger.info(f'{self.__serialnumber}: Storing uploaded file failed: {x["error"]}')
-                #return False
+        if response and response.json():
+            for x in response.json()['content']:
+                if x["result"] != "done":
+                    self.__logger.info(f'{self.__serialnumber}: Storing uploaded file failed: {x["error"]}')
+                    return False
 
         return True
 
@@ -560,3 +642,83 @@ class Updater(Thread):
             return False
 
         return True
+
+    def __aftercare(self):
+        logprefix = ""
+        if self.__serialnumber != "":
+            logprefix = f"{self.__serialnumber}: "
+
+        if not "aftercare" in self.__profile:
+            return True
+        if not "active" in self.__profile["aftercare"]:
+            return True
+        if not "requests" in self.__profile["aftercare"]:
+            return True
+        if not "logfile" in self.__profile["aftercare"]:
+            return True
+        if self.__profile["aftercare"]["active"] is not True:
+            self.__logger.info(f"{logprefix}Skipping aftercare phase")
+            return True
+
+        waittime = 5
+
+        # get serial number again
+        for _ in range(5):
+            # get serialnumber of this device
+            ret = self.__get_serial()
+            if ret is True:
+                break
+
+            # log in again
+            if self.__login_rest_aftercare() is False:
+                return False
+
+            sleep(waittime)
+
+        if self.__message['serial'] is None:
+            self.__logger.info(f"{logprefix}Could not read serial number in aftercare phase")
+            return False
+
+        answers = {}
+        for request in self.__profile["aftercare"]["requests"]:
+            if not "name" in request or not "request" in request or not "jsonpath" in request:
+                continue
+
+            # try a few times to get the expected result
+            found = False
+            for _ in range(3):
+                url = f'https://{self.__ip}{request["request"]}'
+                try:
+                    response = self.__session.get(url, verify=False, timeout=15)
+                except Exception as e:
+                    self.__logger.info(f"{logprefix}Could not get answer for request \"{request}\": {str(e)}")
+                    sleep(waittime)
+                    continue
+
+                if response.status_code != 200:
+                    self.__logger.info(f"{logprefix}Could not get response code 200 for request \"{request}\"")
+                    sleep(waittime)
+                    continue
+
+                # find the first match in the answer
+                matches = jsonpath.finditer(request["jsonpath"], response.json())
+                for match in matches:
+                    answers[request["name"]] = match.value
+                    break
+
+                # check if there is an expected result, that the response should match
+                if "expected" in request:
+                    if answers[request["name"]] != request["expected"]:
+                        sleep(waittime)
+                        continue
+
+                found = True
+                break
+
+            if found is False:
+                self.__logger.info(f"{logprefix}Could not find expected string for \"{request["name"]}\"")
+                return False
+
+        self.__logger.info(f"Finished aftercare phase")
+
+        return answers
