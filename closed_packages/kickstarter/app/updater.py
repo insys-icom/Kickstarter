@@ -719,6 +719,6 @@ class Updater(Thread):
                 self.__logger.info(f"{logprefix}Could not find expected string for \"{request["name"]}\"")
                 return False
 
-        self.__logger.info(f"Finished aftercare phase")
+        self.__logger.info(f"{logprefix}Finished aftercare phase")
 
         return answers
