@@ -701,7 +701,14 @@ class Updater(Thread):
                     continue
 
                 # find the first match in the answer
-                matches = jsonpath.finditer(request["jsonpath"], response.json())
+                matches = []
+                try:
+                    matches = jsonpath.finditer(request["jsonpath"], response.json())
+                except:
+                    self.__logger.info(f"{logprefix}Could not find match in JSONPATH: {request["jsonpath"]}")
+                    sleep(waittime)
+                    continue
+
                 for match in matches:
                     answers[request["name"]] = match.value
                     break
