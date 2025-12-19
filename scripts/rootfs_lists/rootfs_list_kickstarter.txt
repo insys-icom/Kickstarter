@@ -51,6 +51,7 @@ dir /sys                        0755 0 0
 dir /tmp                        0777 0 0
 dir /usr                        0755 0 0
 dir /usr/local                  0755 0 0
+dir /usr/local/lib              0755 0 0
 dir /usr/share                  0755 0 0
 dir /usr/share/nano             0755 0 0
 dir /usr/share/terminfo         0755 0 0
@@ -175,9 +176,9 @@ include snippets/python_${ARCH}.txt
 #############################
 # additional Python modules #
 #############################
-dir /usr/local/lib/python3.13/site-packages 755 0 0
+dir /usr/local/lib/python3.14/site-packages 755 0 0
 
 # execute in rootfs_staging/$ARCH:
-# ../../scripts/gen_initramfs_list.sh -u $(id -u) -g $(id -g) -d ./ | grep '/usr/local/lib/python3.13/site-packages/*/' | sed 's| ./usr/local/lib/python3.13/site-packages/| ${STAGING_DIR}/usr/local/lib/python3.13/site-packages/|' | sort > ../list.txt
+# ../../scripts/gen_initramfs_list.sh -u $(id -u) -g $(id -g) -d ./ | grep '/usr/local/lib/python3.14/site-packages/*/' | sed 's| ./usr/local/lib/python3.14/site-packages/| ${STAGING_DIR}/usr/local/lib/python3.14/site-packages/|' | sort > ../../scripts/rootfs_lists/snippets/python_modules_${PWD##*/}.txt
 
 include snippets/python_modules_${ARCH}.txt

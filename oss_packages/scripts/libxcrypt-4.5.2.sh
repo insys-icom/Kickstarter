@@ -1,17 +1,17 @@
 #!/bin/sh
 
 # name of directory after extracting the archive in working directory
-PKG_DIR="libxcrypt-4.4.38"
+PKG_DIR="libxcrypt-4.5.2"
 
 # name of the archive in dl directory (use "none" if empty)
 PKG_ARCHIVE_FILE="${PKG_DIR}.tar.xz"
 
 # download link for the sources to be stored in dl directory (use "none" if empty)
-# PKG_DOWNLOAD="https://github.com/besser82/libxcrypt/releases/download/v4.4.38/${PKG_ARCHIVE_FILE}"
+# PKG_DOWNLOAD="https://github.com/besser82/libxcrypt/releases/download/v4.4.36/${PKG_ARCHIVE_FILE}"
 PKG_DOWNLOAD="https://m3-container.net/M3_Container/oss_packages/${PKG_ARCHIVE_FILE}"
 
 # md5 checksum of archive in dl directory (use "none" if empty)
-PKG_CHECKSUM="80304b9c306ea799327f01d9a7549bdb28317789182631f1b54f4511b4206dd6"
+PKG_CHECKSUM="71513a31c01a428bccd5367a32fd95f115d6dac50fb5b60c779d5c7942aec071"
 
 
 

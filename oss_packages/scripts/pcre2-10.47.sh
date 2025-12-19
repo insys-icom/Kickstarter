@@ -1,17 +1,17 @@
 #!/bin/sh
 
 # name of directory after extracting the archive in working directory
-PKG_DIR="cJSON-1.7.18"
+PKG_DIR="pcre2-10.47"
 
 # name of the archive in dl directory (use "none" if empty)
-PKG_ARCHIVE_FILE="${PKG_DIR}.tar.gz"
+PKG_ARCHIVE_FILE="${PKG_DIR}.tar.bz2"
 
 # download link for the sources to be stored in dl directory (use "none" if empty)
-# PKG_DOWNLOAD="https://github.com/DaveGamble/cJSON/archive/refs/tags/v${PKG_DIR##*-}.tar.gz"
+#PKG_DOWNLOAD="https://github.com/PhilipHazel/pcre2/releases/download/${PKG_DIR}/${PKG_ARCHIVE_FILE}"
 PKG_DOWNLOAD="https://m3-container.net/M3_Container/oss_packages/${PKG_ARCHIVE_FILE}"
 
 # md5 checksum of archive in dl directory (use "none" if empty)
-PKG_CHECKSUM="3aa806844a03442c00769b83e99970be70fbef03735ff898f4811dd03b9f5ee5"
+PKG_CHECKSUM="47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7"
 
 
 
@@ -28,15 +28,15 @@ PKG_INSTALL_DIR="${PKG_BUILD_DIR}/install"
 configure()
 {
     cd "${PKG_BUILD_DIR}"
-    cmake \
-        -DCMAKE_C_COMPILER=${M3_CROSS_COMPILE}gcc \
-        -DCMAKE_C_FLAGS="${M3_CFLAGS} -fPIC -I${STAGING_INCLUDE} -L${STAGING_LIB}" \
-        -DCMAKE_AR=${AR} \
-        -DCMAKE_LINKER=${M3_CROSS_COMPILE}ld \
-        -DCMAKE_STRIP=${M3_CROSS_COMPILE}strip \
-        -DCMAKE_NM=${NM} \
-        -DCMAKE_RANLIB=${RANLIB} \
-        -DCMAKE_INSTALL_PREFIX="" \
+    ./configure \
+        CFLAGS="${M3_CFLAGS}" \
+        LDFLAGS="${M3_LDFLAGS}" \
+        --target=${M3_TARGET} \
+        --host=${M3_TARGET} \
+        --disable-pcregrep-jit \
+        --enable-shared=yes \
+        --enable-utf \
+        --prefix="" \
         || exit_failure "failed to configure ${PKG_DIR}"
 }
 
