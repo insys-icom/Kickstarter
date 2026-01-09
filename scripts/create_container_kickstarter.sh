@@ -11,7 +11,6 @@ PACKAGES_1=(
     "tzdb-2025c.sh"
 )
 PACKAGES_2=(
-    "lz4-1.10.0.sh"
     "pcre2-10.47.sh"
     "openssl-3.6.0.sh"
     "libffi-3.5.2.sh"
@@ -29,9 +28,9 @@ PACKAGES_2=(
 PACKAGES_3=(
     "busybox-1.36.1.sh"
     "dropbear-2025.89.sh"
-    "metalog-20230719.sh"
+    "metalog-20260105.sh"
     "radvd-2.19.sh"
-    "libwebsockets-4.3.3.sh"
+    "libwebsockets-4.3.5.sh"
 )
 PACKAGES_4=(
     "mosquitto-2.0.22.sh"

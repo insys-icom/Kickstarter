@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # name of directory after extracting the archive in working directory
-PKG_DIR="libwebsockets-4.3.3"
+PKG_DIR="libwebsockets-4.3.5"
 
 # name of the archive in dl directory
 PKG_ARCHIVE_FILE="${PKG_DIR}.tar.gz"
@@ -11,7 +11,7 @@ PKG_ARCHIVE_FILE="${PKG_DIR}.tar.gz"
 PKG_DOWNLOAD="https://m3-container.net/M3_Container/oss_packages/${PKG_ARCHIVE_FILE}"
 
 # md5 checksum of archive in dl directory (use "none" if empty)
-PKG_CHECKSUM="6fd33527b410a37ebc91bb64ca51bdabab12b076bc99d153d7c5dd405e4bdf90"
+PKG_CHECKSUM="87f99ad32803ed325fceac5327aae1f5c1b417d54ee61ad36cffc8df5f5ab276"
 
 
 
@@ -28,24 +28,22 @@ PKG_INSTALL_DIR="${PKG_BUILD_DIR}/install"
 configure()
 {
     cd "${PKG_BUILD_DIR}"
-
-    # avoid searching for libcap, so it doesn't get linked to
-    sed -i "s|^CHECK_LIBRARY_EXISTS(|#CHECK_LIBRARY_EXISTS(|" "${PKG_BUILD_DIR}/CMakeLists.txt"
-
     cmake . \
-        -DCMAKE_C_COMPILER=${M3_CROSS_COMPILE}gcc \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DCMAKE_C_COMPILER="${M3_CROSS_COMPILE}"gcc \
         -DCMAKE_C_FLAGS="${M3_CFLAGS} -fPIC -I${STAGING_INCLUDE} -L${STAGING_LIB} -Wno-sign-compare" \
-        -DCMAKE_AR=${AR} \
-        -DCMAKE_LINKER=${M3_CROSS_COMPILE}ld \
-        -DCMAKE_STRIP=${M3_CROSS_COMPILE}strip \
-        -DCMAKE_NM=${NM} \
-        -DCMAKE_RANLIB=${RANLIB} \
+        -DCMAKE_AR="${AR}" \
+        -DCMAKE_LINKER="${M3_CROSS_COMPILE}"ld \
+        -DCMAKE_STRIP="${M3_CROSS_COMPILE}"strip \
+        -DCMAKE_NM="${NM}" \
+        -DCMAKE_RANLIB="${RANLIB}" \
         -DCMAKE_INSTALL_PREFIX="" \
         -DLWS_OPENSSL_INCLUDE_DIRS="${STAGING_INCLUDE}" \
         -DLWS_OPENSSL_LIBRARIES="${STAGING_LIB}/libssl.so;${STAGING_LIB}/libcrypto.so" \
         -DLWS_WITH_HTTP2=1 \
         -DLWS_IPV6=ON \
         -DLWS_UNIX_SOCK=ON \
+        -DLWS_HAVE_LIBCAP=OFF \
         -DLWS_WITH_LEJP=ON \
         -DLWS_WITH_LEJP_CONF=ON \
         -DLWS_WITHOUT_TESTAPPS=ON \
@@ -56,6 +54,7 @@ configure()
         -DLWS_WITHOUT_TEST_PING=ON \
         -DLWS_WITHOUT_TEST_CLIENT=ON \
         -DLWS_HAVE_SSL_EXTRA_CHAIN_CERTS=ON \
+        -DLWS_HAVE_LIBCAP=OFF \
         || exit_failure "failed to configure ${PKG_DIR}"
 }
 
