@@ -43,7 +43,7 @@
 
         "irm": {
             "active": false,
-            "uri": "https://cloud.insys-icom.de/api",
+            "uri": "https://api.insys-tec.net/api",
             "token": "",
             "group": "Fresh devices"
         },
@@ -72,12 +72,6 @@
                     "name": "icomOS",
                     "request": "/api/v2_0/status/device_info",
                     "jsonpath": "status.list[0].firmware_version"
-                },
-                {
-                    "name": "flash",
-                    "request": "/api/v2_0/status/sysdetail/system",
-                    "jsonpath": "status.unique.flash_status",
-                    "expected": "OK"
                 }
             ]
 		}

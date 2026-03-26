@@ -337,6 +337,24 @@ class Kickstart():
                 self.__aftercare_data = {}
                 self.__mqtt.msg_aftercare_devices(len(self.__aftercare_data))
 
+    def __do_downloader_message(self, msg):
+        if "firmware" in msg:
+            if '-' in msg["firmware"]:
+                fw = msg["firmware"]
+                self.__logger.info(fw)
+                self.__fw_version = fw.split('-')[1]
+                self.__mqtt.msg_latest_firmware(self.__fw_version)
+
+                if self.__profile["firmware"]["filename"] == "latest":
+                    self.__path_firmware = fw
+                    self.__profile["firmware"]["filename"] = fw
+
+        if "internet" in msg:
+            # broadcast new intenet state to everyone
+            if msg["internet"]:
+                self.__mqtt.msg_internet("online")
+            else:
+                self.__mqtt.msg_internet("offline")
 
     # never ending main loop
     def __mainloop(self):
@@ -449,15 +467,9 @@ class Kickstart():
                 ips = msg
 
             # read incoming message from downloader
-            ret = self.__get_queue_messages(self.__queue_downloader)
-            if ret and '-' in ret:
-                self.__logger.info(ret)
-                self.__fw_version = ret.split('-')[1]
-                self.__mqtt.msg_latest_firmware(self.__fw_version)
-
-                if self.__profile["firmware"]["filename"] == "latest":
-                    self.__path_firmware = ret
-                    self.__profile["firmware"]["filename"] = ret
+            msg = self.__get_queue_messages(self.__queue_downloader)
+            if msg:
+                self.__do_downloader_message(msg)
 
             sleep(1)
 

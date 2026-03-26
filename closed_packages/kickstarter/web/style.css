@@ -1,27 +1,11 @@
 :root {
-    --status_mqtt_broker_color: red;
-    --status_kickstarter_color: red;
-
     --box_top_display: none; /*  block */
-    --box_top_visibility: hidden; /* visible */
-
     --box_status_display: block;
-    --box_status_visibility: visible;
-
     --box_settings_display: none;
-    --box_settings_visibility: hidden;
-
     --box_files_display: none;
-    --box_files_visibility: hidden;
-
     --box_help_display: none;
-    --box_help_visibility: hidden;
-
     --box_upload_display: none;
-    --box_upload_visibility: hidden;
-
     --box_save_display: none;
-    --box_save_visibility: hidden;
 }
 
 body {
@@ -55,13 +39,6 @@ helpindex {
 help {
     grid-column: left-div / right-end;
     grid-row:    help / foot-end;
-}
-
-.status_mqtt_broker {
-    color: var(--status_mqtt_broker_color);
-}
-.status_kickstarter {
-    color: var(--status_kickstarter_color);
 }
 
 a:link, a:visited, a:active {
@@ -99,47 +76,39 @@ a:link, a:visited, a:active {
 
 .box.box_top {
     display: var(--box_top_display);
-    visibility: var(--box_top_visibility);
 }
 
 .box.box_status {
     display: var(--box_status_display);
-    visibility: var(--box_status_visibility);
 }
 
 .box.box_settings {
     display: var(--box_settings_display);
-    visibility: var(--box_settings_visibility);
     max-width: 700px;
 }
 
 .box.box_files {
     display: var(--box_files_display);
-    visibility: var(--box_files_visibility);
     max-width: 700px;
 }
 
 .box.box_help_index {
     display: var(--box_help_display);
-    visibility: var(--box_help_visibility);
     max-width: 200px;
 }
 
 .box.box_help {
-    display: var(--box_help_display);
-    visibility: var(--box_help_visibility);
+    display: var(--box_help_display);;
     max-width: 700px;
 }
 
 .box.box_upload {
     display: var(--box_upload_display);
-    visibility: var(--box_upload_visibility);
     max-width: 700px;
 }
 
 .box.box_save {
     display: var(--box_save_display);
-    visibility: var(--box_save_visibility);
     max-width: 700px;
 }
 
@@ -261,4 +230,13 @@ th {
     margin: 0;
     padding: 0;
     cursor: pointer;
+}
+
+#log_kickstarter {
+    display: block;
+    max-width: 100%;
+    max-height: 400px;
+    overflow-y: scroll;
+    word-wrap: break-word;
+    white-space: pre-wrap;
 }

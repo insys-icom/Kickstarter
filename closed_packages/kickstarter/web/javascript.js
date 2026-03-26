@@ -29,6 +29,30 @@ function start_mqtt() {
     client.on('error',     on_close);
     client.on('message',   on_message);
     client.on('close',     on_close);
+
+    // get config from storage
+    load_store();
+}
+
+// get config from storage
+function load_store() {
+    let store = JSON.parse(localStorage.getItem('store'));
+    if (!store) {
+        // fill store with default values
+        store = {
+            "content": {}
+        };
+        localStorage.setItem('store', JSON.stringify(store));
+        console.log("create new Store");
+    }
+    for (i in store["content"]) {
+        console.log("1:" + "content_" + i);
+        if (!document.getElementById("content_" + i)) {
+            console.log("break");
+            break;
+        }
+        toggle_box_content(i, store["content"][i]);
+    }
 }
 
 // Disable all logging of MQTT client
@@ -36,8 +60,8 @@ function disable_mqtt_log () {;}
 
 // MQTT got connected
 function on_connect() {
-    root.style.setProperty('--status_mqtt_broker_color', "green");
-    document.getElementsByClassName("status_mqtt_broker")[0].innerHTML = text_connected;
+    document.getElementById("status_mqtt_broker").style.color = "green";
+    document.getElementById("status_mqtt_broker").innerHTML = text_connected;
     document.getElementById("rb_status").checked = true;
 
     client.subscribe(top_topic + '/#', { nl: true } ); // Do not listen to your own messages
@@ -90,9 +114,19 @@ function on_message(topic, message) {
             text = text_connected;
         }
 
-        root.style.setProperty('--status_kickstarter_color', colour);
-        var s = document.getElementsByClassName("status_kickstarter");
-        for (var i = 0; i < s.length; i++) { s[i].innerHTML = text; };
+        document.getElementById("status_kickstarter").style.color = colour;
+        document.getElementById("status_kickstarter").innerHTML = text;
+    }
+    else if (topic == (top_topic + "/internet")) {
+        colour = "red";
+        text = text_disconnected;
+        if (mes == "online") {
+            colour = "green";
+            text = text_connected;
+        }
+
+        document.getElementById("status_internet").style.color = colour;
+        document.getElementById("status_internet").innerHTML = text;
     }
     else { console.log("received from unknown topic " + topic); }
 }
@@ -118,67 +152,60 @@ function view_boxes(menu) {
     var upload_display = "none";
     var save_display = "none";
 
-    var status_visibility = "hidden";
-    var settings_visibility = "hidden";
-    var files_visibility = "hidden";
-    var help_visibility = "hidden";
-    var help_index_visibility = "hidden";
-    var upload_visibility = "hidden";
-    var save_visibility = "hidden";
-
     switch (menu) {
         case "status":
             status_display = "block";
-
-            status_visibility = "visible";
             break;
 
         case "settings":
             settings_display = "block";
             save_display = "block";
-
-            settings_visibility = "visible";
-            save_visibility = "visible";
             break;
 
         case "files":
             files_display = "block";
             upload_display = "block";
-
-            files_visibility = "visible";
-            upload_visibility = "visible";
             break;
 
         case "help":
             help_index_display = "block";
             help_display = "block";
-
-            help_index_visibility = "visible";
-            help_visibility = "visible";
             break;
     }
 
     root.style.setProperty('--box_status_display', status_display);
-    root.style.setProperty('--box_status_visibility', status_visibility);
-
     root.style.setProperty('--box_settings_display', settings_display);
-    root.style.setProperty('--box_settings_visibility', settings_visibility);
-
     root.style.setProperty('--box_files_display', files_display);
-    root.style.setProperty('--box_files_visibility', files_visibility);
-
     root.style.setProperty('--box_help_index_display', help_index_display);
-    root.style.setProperty('--box_help_index_visibility', help_index_visibility);
     root.style.setProperty('--box_help_display', help_display);
-    root.style.setProperty('--box_help_visibility', help_visibility);
-
     root.style.setProperty('--box_upload_display', upload_display);
-    root.style.setProperty('--box_upload_visibility', upload_visibility);
-
     root.style.setProperty('--box_save_display', save_display);
-    root.style.setProperty('--box_save_visibility', save_visibility);
 
     help_chapter("overview.html");
+}
+
+// toggle showing/hiding box elements
+function toggle_box_content(content_id, setting) {
+    let show = "block";
+    let dir = "pics/up.png";
+
+    if (setting === 'none') {
+        show = "none";
+        dir = "pics/down.png";
+    }
+    else if (setting === 'toggle') {
+        if (document.getElementById("content_" + content_id).style.display === 'block') {
+            show = "none";
+            dir = "pics/down.png";
+        }
+    }
+    document.getElementById("content_" + content_id).style.display = show;
+    document.getElementById("pic_toggle_" + content_id).src = dir;
+
+    // store in browser store
+    let store = JSON.parse(localStorage.getItem('store'));
+    store["content"][content_id] = show;
+    localStorage.setItem('store', JSON.stringify(store));
 }
 
 // print head of table with detected devices
@@ -238,39 +265,23 @@ function device_Table(table, json) {
 
 // Paint everything as offline and in red colour
 function paint_offline() {
-    root.style.setProperty('--status_mqtt_broker_color', "red");
-    var s = document.getElementsByClassName("status_mqtt_broker");
-    for (var i = 0; i < s.length; i++) { s[i].innerHTML = text_disconnected; }
+    let elements = ["status_mqtt_broker", "status_kickstarter", "internet"]
+    for (let e of elements) {
+        document.getElementById(e).style.color = "red";
+        document.getElementById(e).innerHTML = text_disconnected;
+    }
 
-    root.style.setProperty('--status_kickstarter_color', "red");
-    var s = document.getElementsByClassName("status_kickstarter");
-    for (var i = 0; i < s.length; i++) { s[i].innerHTML = text_disconnected; }
-
+    document.getElementById("detected_devices").innerHTML = 0;
     document.querySelector("#devicetable").innerHTML = "";
     document.querySelector("#filetable").innerHTML = "";
 }
 
 // print tail of log file
 function print_log(message, logname) {
-    maxlines = 35;
     log = document.getElementById(logname);
-    logString = log.innerHTML
-    log.innerHTML = "";
-    if (logString.length > 0) {
-        arr = logString.split('\n');
-        var i = 0;
-        if (arr.length > maxlines) {
-            i = arr.length - maxlines;
-        }
-        for (; i < (arr.length - 1); i++) {
-            var line = arr[i].substring(0, 140);
-            line = line.replace(/[\r|\n|\r\n]$/, '');
-            log.append(line);
-            log.append('\n');
-        }
-    }
-    log.append(message);
-    log.append('\n');
+    log.append(message + '\n');
+    // Auto scroll to the bottom
+    log.scrollTop = log.scrollHeight;
 }
 
 // print table with all stored files
@@ -570,7 +581,7 @@ function filechooser(event) {
     document.getElementById('files_uploading').innerHTML = fragments.join('');
 }
 
-// print status "online" and green colour for everything that runs
+// en-/disable elements, so user can/can't use them
 function enable_elements(yesno) {
     var elements = [
         "store_settings"
@@ -663,7 +674,7 @@ function display_upload() {
     row.appendChild(th);
 
     var th = document.createElement("th");
-    th.appendChild(document.createTextNode("activate ASCII"));
+    th.appendChild(document.createTextNode("apply ASCII"));
     row.appendChild(th);
 
     // paint all existing upload files

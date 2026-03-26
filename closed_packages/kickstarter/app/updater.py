@@ -44,7 +44,7 @@ class Updater(Thread):
             # maybe the device has already been run through and we are in aftercare phase,
             # try the user from the a possibly activated profile
             self.__message['action'] = 'Get info from device in aftercare phase'
-            self.__logger.info(f"Use login credentials of aftercare phase")
+            self.__logger.info("Use login credentials of aftercare phase")
             ret = self.__aftercare()
             if ret is False:
                 self.__end_updating("off")
@@ -86,6 +86,15 @@ class Updater(Thread):
             self.__end_updating("off")
             return
 
+        # TODO iCS
+
+        # Register device at iRM
+        self.__message['action'] = "Registering device at iRM"
+        self.__queue.put(self.__message)
+        if self.__register_irm() is False:
+            self.__end_updating("off")
+            return
+
         # upload various files
         self.__message['action'] = "Uploading additional files"
         self.__queue.put(self.__message)
@@ -97,15 +106,6 @@ class Updater(Thread):
         self.__message['action'] = "Uploading config from CSV"
         self.__queue.put(self.__message)
         if self.__upload_config() is False:
-            self.__end_updating("off")
-            return
-
-        # TODO iCS
-
-        # Register device at iRM
-        self.__message['action'] = "Registering device at iRM"
-        self.__queue.put(self.__message)
-        if self.__register_irm() is False:
             self.__end_updating("off")
             return
 
@@ -215,15 +215,13 @@ class Updater(Thread):
         url = f'https://{self.__ip}/api/v2_0/auth/login'
 
         if (username is None or password is None):
-            if "initial_login" in self.__profile and \
-                "username" in self.__profile["initial_login"] and \
-                "password" in self.__profile["initial_login"]:
-                    username = self.__profile["initial_login"]["username"]
-                    password = self.__profile["initial_login"]["password"]
-                    if username != "" and password  != "":
-                        auth = { 'username': username, 'password': password }
-                    else:
-                        auth = { 'username': 'insys', 'password': 'icom' }
+            if "initial_login" in self.__profile and "username" in self.__profile["initial_login"] and "password" in self.__profile["initial_login"]:
+                username = self.__profile["initial_login"]["username"]
+                password = self.__profile["initial_login"]["password"]
+                if username != "" and password  != "":
+                    auth = { 'username': username, 'password': password }
+                else:
+                    auth = { 'username': 'insys', 'password': 'icom' }
             else:
                 auth = { 'username': 'insys', 'password': 'icom' }
         else:
@@ -505,7 +503,7 @@ class Updater(Thread):
         try:
             f = open(filedir.joinpath(filename), 'rb')
         except Exception as e:
-            self.__logger.info(f'{self.__serialnumber}: Failed to open file {filedir.joinpath(filename)}')
+            self.__logger.info(f'{self.__serialnumber}: Failed to open file {filedir.joinpath(filename)}: {str(e)}')
             return False
         filedata = f.read()
         f.close()
@@ -525,8 +523,12 @@ class Updater(Thread):
                 sleep(3)
                 continue
 
+            if response.status_code == 503:
+                sleep(3)
+                continue
+
             if response.status_code != 201:
-                self.__logger.info(f'{self.__serialnumber}: Uploading file "{filename}" failed, {response.status_code}: {response.reason}, {response.json()}')
+                self.__logger.info(f'{self.__serialnumber}: Uploading file "{filename}" failed, {response.status_code}')
                 return False
             return response
 
@@ -534,7 +536,7 @@ class Updater(Thread):
 
     def __perform_upload(self, orig_response, activate=False):
         url = f'https://{self.__ip}/api/v2_0/upload/perform'
-        timeout = 250
+        timeout = 10
 
         payload = {
             "identifier": orig_response["identifier"],
@@ -580,10 +582,12 @@ class Updater(Thread):
                 sleep(3)
 
             if response:
+                if response.status_code == 503:
+                    sleep(3)
+                    continue
                 if response.status_code == 201:
                     break
-                else:
-                    self.__logger.info(f'{self.__serialnumber}: Storing uploaded file failed: {response.status_code}: {response.reason}')
+                self.__logger.info(f'{self.__serialnumber}: Storing uploaded file failed: {response.status_code}: {response.reason}')
 
         # walk over entries of response
         if response and response.json():
@@ -715,7 +719,7 @@ class Updater(Thread):
 
                 # check if there is an expected result, that the response should match
                 if "expected" in request:
-                    if answers[request["name"]] != request["expected"]:
+                    if request["name"] not in answers or answers[request["name"]] != request["expected"]:
                         sleep(waittime)
                         continue
 

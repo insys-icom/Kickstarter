@@ -1,17 +1,16 @@
 #!/bin/sh
 
 # name of directory after extracting the archive in working directory
-PKG_DIR="metalog-20260105"
+PKG_DIR="metalog-20260221"
 
 # name of the archive in dl directory (use "none" if empty)
 PKG_ARCHIVE_FILE="${PKG_DIR}.tar.gz"
 
 # download link for the sources to be stored in dl directory (use "none" if empty)
-#PKG_DOWNLOAD="https://github.com/hvisage/metalog/archive/refs/tags/${PKG_ARCHIVE_FILE#*-}"
-PKG_DOWNLOAD="https://m3-container.net/M3_Container/oss_packages/${PKG_ARCHIVE_FILE}"
+PKG_DOWNLOAD="https://github.com/hvisage/metalog/archive/refs/tags/${PKG_ARCHIVE_FILE#*-}"
 
 # md5 checksum of archive in dl directory (use "none" if empty)
-PKG_CHECKSUM="58ee4f423d51eccdd4b404c7c6e3b62b334d7be6e1a052bca1b0efb2501f69cc"
+PKG_CHECKSUM="74758d711cf264aa8eb78caf4887998cb7bea0876c34d8ec19bd59fb8991349f"
 
 
 

@@ -3,9 +3,9 @@ from threading import Thread
 import tempfile
 from pathlib import Path
 from time import sleep, monotonic
+from hashlib import sha256
 import urllib3
 import requests
-from hashlib import sha256
 
 class Downloader(Thread):
     def __init__(self, logger, queue, config):
@@ -16,12 +16,16 @@ class Downloader(Thread):
         self.__shutdown = False
         self.__config = config
         self.__profile = self.__config["profile"]
+        self.__check_intervall = 0
+        self.__time_checked = 0
+        self.__online = False
 
     def run(self):
         self.config_update(self.__config)
         while self.__shutdown is False:
             self.__search_new_firmware()
-            sleep(10)
+            self.__check_internet(self.__profile['auto-update']['uri'])
+            sleep(15)
 
     def shutdown(self):
         self.__logger.info('Shutting down downloader')
@@ -33,6 +37,21 @@ class Downloader(Thread):
         self.__config = config
         self.__profile = self.__config["profile"]
         self.__logger.info(f'Set checking for new firmware to "{self.__profile["auto-update"]["active"]}"')
+
+    # get head of URI of Auto Update server to check for internet connection state
+    def __check_internet(self, url):
+        online = False
+        try:
+            r = requests.head(url, timeout=60)
+            if r.status_code == 200:
+                online = True
+        except:
+            pass
+
+        if self.__online != online:
+            self.__logger.info(f"Internet state changed to {online}")
+            self.__online = online
+            self.__queue.put({ "internet": online })
 
     # search for new firmware
     def __search_new_firmware(self):
@@ -55,7 +74,7 @@ class Downloader(Thread):
                     self.__logger.info(f'Downloaded firmware version {firmware_version}')
 
                     # send firmware version to main
-                    self.__queue.put(ret)
+                    self.__queue.put({ "firmware": ret })
                 else:
                     self.__logger.info('No new firmware version available')
 
@@ -69,17 +88,21 @@ class Downloader(Thread):
         hostname = uri.split('/')[2]
 
         # download list file with downloading instructions
-        with requests.get(uri, stream=True, verify=False, timeout=10) as r:
-            r.raise_for_status()
-            tmp = tempfile.NamedTemporaryFile()
-            with open(tmp.name, "wb+") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
+        r = None
+        try:
+            r = requests.get(uri, stream=True, verify=False, timeout=10)
+        except:
+            return False, None
 
-            with open(tmp.name, "r+", encoding='UTF-8') as f:
-                x = f.read()
-                # extract path to file that should be downloaded
-                dl_path = x.split(';')[1:][0].rstrip()
+        tmp = tempfile.NamedTemporaryFile()
+        with open(tmp.name, "wb+") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+        with open(tmp.name, "r+", encoding='UTF-8') as f:
+            x = f.read()
+            # extract path to file that should be downloaded
+            dl_path = x.split(';')[1:][0].rstrip()
 
         if dl_path is None:
             return True, None
@@ -105,22 +128,25 @@ class Downloader(Thread):
 
         # download file via http
         self.__logger.info(f'Downloading: {firmware_file_name}')
-        with requests.get(protocol + '//' + hostname + '/' + dl_path, stream=True, verify=False, timeout=10) as r:
-            r.raise_for_status()
-            with open(firmware_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
+        try:
+            r = requests.get(protocol + '//' + hostname + '/' + dl_path, stream=True, verify=False, timeout=10)
+        except:
+            return False, None
 
-            # create hash file
-            with open(firmware_path, 'rb') as f:
-                hashes_path = Path(self.__config['dirs']['hashes']).joinpath(firmware_file_name)
-                data = f.read()
-                try:
-                    h = open(hashes_path, "w", encoding="UTF-8")
-                    h.write(sha256(data).hexdigest())
-                    h.close()
-                except Exception as e:
-                    self.__logger.info(f"Could not store sha256sum of file {firmware_path} : {str(e)}")
+        with open(firmware_path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+        # create hash file
+        with open(firmware_path, 'rb') as f:
+            hashes_path = Path(self.__config['dirs']['hashes']).joinpath(firmware_file_name)
+            data = f.read()
+            try:
+                h = open(hashes_path, "w", encoding="UTF-8")
+                h.write(sha256(data).hexdigest())
+                h.close()
+            except Exception as e:
+                self.__logger.info(f"Could not store sha256sum of file {firmware_path} : {str(e)}")
 
             os.sync()
         return False, firmware_file_name

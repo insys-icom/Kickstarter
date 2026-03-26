@@ -20,6 +20,7 @@ class Topics(TopicType):
     ALERT           = 'alert'
     AFTERCARE       = 'aftercare'
     AFTERCARE_RESET = 'aftercare_reset'
+    INTERNET        = 'internet'
 
 class Mqtt(logging.Handler):
     def __init__(self, logger, queue, profile):
@@ -92,6 +93,9 @@ class Mqtt(logging.Handler):
 
     def msg_profile(self, userdata):
         return self.__client.publish(Topics.PROFILE.fullpath(), payload=json.dumps(userdata), retain=True)
+
+    def msg_internet(self, internet):
+        return self.__client.publish(Topics.INTERNET.fullpath(), payload=internet, retain=True)
 
     def msg_local_files(self, local_files):
         return self.__client.publish(Topics.LOCALFILES.fullpath(), payload=json.dumps(local_files), retain=True)
