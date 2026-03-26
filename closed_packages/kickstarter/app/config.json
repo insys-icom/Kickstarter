@@ -72,6 +72,11 @@
                     "name": "icomOS",
                     "request": "/api/v2_0/status/device_info",
                     "jsonpath": "status.list[0].firmware_version"
+                },
+                {
+                    "name": "type",
+                    "request": "/api/v2_0/status/device_info",
+                    "jsonpath": "status.list[0].board_type"
                 }
             ]
 		}
