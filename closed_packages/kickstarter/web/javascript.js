@@ -265,13 +265,13 @@ function device_Table(table, json) {
 
 // Paint everything as offline and in red colour
 function paint_offline() {
-    let elements = ["status_mqtt_broker", "status_kickstarter", "internet"]
+    let elements = ["status_mqtt_broker", "status_kickstarter", "status_internet"]
     for (let e of elements) {
         document.getElementById(e).style.color = "red";
         document.getElementById(e).innerHTML = text_disconnected;
     }
 
-    document.getElementById("detected_devices").innerHTML = 0;
+    document.getElementById("detected_devices").innerHTML = "";
     document.querySelector("#devicetable").innerHTML = "";
     document.querySelector("#filetable").innerHTML = "";
 }
