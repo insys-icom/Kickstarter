@@ -829,7 +829,7 @@ function add_aftercare_request_element(rand_id, entry) {
     var tabrow = tab.insertRow();
     tabrow.insertCell().appendChild(document.createTextNode("CSV column name"));
     var cell = document.createElement("input");
-    cell.type = text;
+    cell.type = "text";
     cell.size = cellsize;
     if (entry["name"]) { cell.value = entry["name"]; }
     cell.id = "request_name_" + rand_id;
@@ -840,7 +840,7 @@ function add_aftercare_request_element(rand_id, entry) {
     var tabrow = tab.insertRow();
     tabrow.insertCell().appendChild(document.createTextNode("Request URI"));
     var cell = document.createElement("input");
-    cell.type = text;
+    cell.type = "text";
     cell.size = cellsize;
     if (entry["request"]) { cell.value = entry["request"]; }
     cell.id = "request_uri_" + rand_id;
@@ -851,7 +851,7 @@ function add_aftercare_request_element(rand_id, entry) {
     var tabrow = tab.insertRow();
     tabrow.insertCell().appendChild(document.createTextNode("JSONPATH to data"));
     var cell = document.createElement("input");
-    cell.type = text;
+    cell.type = "text";
     cell.size = cellsize;
     if (entry["jsonpath"]) { cell.value = entry["jsonpath"]; }
     cell.id = "request_jsonpath_" + rand_id;
@@ -862,7 +862,7 @@ function add_aftercare_request_element(rand_id, entry) {
     var tabrow = tab.insertRow();
     tabrow.insertCell().appendChild(document.createTextNode("Expected result of request"));
     var cell = document.createElement("input");
-    cell.type = text;
+    cell.type = "text";
     cell.size = cellsize;
     if (entry["expected"]) { cell.value = entry["expected"]; }
     cell.id = "request_expected_" + rand_id;
