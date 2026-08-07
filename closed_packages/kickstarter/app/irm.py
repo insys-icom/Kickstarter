@@ -1,8 +1,7 @@
 """ Create devices in iRM and download the Connection Profile """
 
-import os
 import json
-import requests
+from requests import request
 from pathlib import Path
 
 class Irm():
@@ -18,8 +17,8 @@ class Irm():
     def get_group_ID(self, group_name=None):
         payload = {}
         try:
-            response = requests.request("GET", self.__uri + 'inventory/device-groups',
-                                        data=json.dumps(payload), headers=self.__header, timeout=21)
+            response = request("GET", self.__uri + 'inventory/device-groups',
+                                data=json.dumps(payload), headers=self.__header, timeout=21)
         except Exception as e:
             self.__logger.info(f"iRM: Could not connect to iRM at: {self.__uri}; could not get group ID: {e}")
             return None
@@ -50,9 +49,9 @@ class Irm():
     def __create_group(self, group_name):
         payload = { 'name': group_name }
         try:
-            response = requests.request("POST", self.__uri + 'inventory/device-groups',
-                                        data=json.dumps(payload),
-                                        headers=self.__header, timeout=22)
+            response = request("POST", self.__uri + 'inventory/device-groups',
+                               data=json.dumps(payload),
+                               headers=self.__header, timeout=22)
         except Exception as e:
             self.__logger.info(f'iRM: Could not create "{group_name}": {e}')
             return None
@@ -74,8 +73,8 @@ class Irm():
                     'name': serial,
                     'serialNumber': serial }
         try:
-            response = requests.request("POST", self.__uri + 'inventory/managed-devices', data=json.dumps(payload),
-                                        headers=self.__header, timeout=23)
+            response = request("POST", self.__uri + 'inventory/managed-devices', data=json.dumps(payload),
+                                headers=self.__header, timeout=23)
         except Exception as e:
             self.__logger.info(f"iRM: Could not create device with serial number: {serial}: {e}")
             return None
@@ -87,7 +86,7 @@ class Irm():
             payload = {}
             url = f'{self.__uri}inventory/managed-devices?serialNumber={serial}'
             try:
-                response = requests.request("GET", url, data=json.dumps(payload), headers=self.__header, timeout=24)
+                response = request("GET", url, data=json.dumps(payload), headers=self.__header, timeout=24)
             except Exception as e:
                 self.__logger.info(f'iRM: Could not connect to iRM at: {self.__uri}; could check device with serial number: {e}')
                 return None
@@ -104,7 +103,7 @@ class Irm():
         payload = {}
         url = f'{self.__uri}inventory/managed-devices/{device_id}/connection-profile?format=update-packet'
         try:
-            response = requests.request("GET", url, data=json.dumps(payload), headers=self.__header, timeout=120)
+            response = request("GET", url, data=json.dumps(payload), headers=self.__header, timeout=120)
         except Exception as e:
             self.__logger.info(f"iRM: Could not connect to iRM at: {self.__uri}; could not get Connection Profile: {e}")
             return False
@@ -124,7 +123,7 @@ class Irm():
         payload = {}
         url = f'{self.__uri}inventory/managed-devices/{device_id}'
         try:
-            response = requests.request("DELETE", url, data=json.dumps(payload), headers=self.__header, timeout=26)
+            response = request("DELETE", url, data=json.dumps(payload), headers=self.__header, timeout=26)
         except Exception as e:
             self.__logger.info(f"iRM: Could not connect to iRM at: {self.__uri}; could not delete device: {e}")
             return False

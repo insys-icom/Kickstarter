@@ -1,16 +1,17 @@
-import os
+from os import path, sync
 from threading import Thread
-import tempfile
+from tempfile import NamedTemporaryFile
 from pathlib import Path
 from time import sleep, monotonic
 from hashlib import sha256
-import urllib3
+from urllib3 import disable_warnings
 import requests
+
 
 class Downloader(Thread):
     def __init__(self, logger, queue, config):
         Thread.__init__(self)
-        urllib3.disable_warnings()
+        disable_warnings()
         self.__logger = logger
         self.__queue = queue
         self.__shutdown = False
@@ -94,7 +95,7 @@ class Downloader(Thread):
         except:
             return False, None
 
-        tmp = tempfile.NamedTemporaryFile()
+        tmp = NamedTemporaryFile()
         with open(tmp.name, "wb+") as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
@@ -112,7 +113,18 @@ class Downloader(Thread):
 
         # create the target directory if it does not exist
         firmware_path = Path(self.__config['dirs']['files'])
-        if os.path.isfile(firmware_path) is False:
+
+        # download the file for arm32
+        self.__download_file(dl_path, firmware_path, firmware_file_name, protocol, hostname)
+
+        # download the file for arm64
+        dl_path = f"{dl_path.split("tar")[0]}arm64.tar"
+        firmware_file_name = f"{firmware_file_name.split("tar")[0]}arm64.tar"
+
+        return self.__download_file(dl_path, firmware_path, firmware_file_name, protocol, hostname)
+
+    def __download_file(self, dl_path, firmware_path, firmware_file_name, protocol, hostname):
+        if path.isfile(firmware_path) is False:
             try:
                 firmware_path.mkdir(exist_ok=True, parents=True)
             except Exception as e:
@@ -148,5 +160,7 @@ class Downloader(Thread):
             except Exception as e:
                 self.__logger.info(f"Could not store sha256sum of file {firmware_path} : {str(e)}")
 
-            os.sync()
+            sync()
+
         return False, firmware_file_name
+

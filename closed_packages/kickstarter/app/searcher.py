@@ -1,5 +1,5 @@
 from threading import Thread
-import subprocess
+from subprocess import Popen, PIPE
 from time import sleep
 
 class Searcher(Thread):
@@ -22,13 +22,24 @@ class Searcher(Thread):
         self.__logger.info('Shutting down searcher')
         self.__shutdown = True
 
+    # ping a specific IP address
+    def ping_device(self, ip, interface):
+        """ ping a specific device """
+        ping = Popen(["ping", "-c", "1", "-W", "1", "-I", interface, ip], stdout=PIPE, stderr=PIPE)
+        out = ping.communicate()
+
+        for line in str(out).split("\\n"):
+            if "1 packets transmitted, 1 " in line:
+                return True
+
+        return False
+
     def __get_neighbours(self):
-        ping = subprocess.Popen(["ping", "-c", "1", "-W", "1", "-w", "1", "-I", self.__interface, "ff02::1"],
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        ping = Popen(["ping", "-c", "1", "-W", "1", "-w", "1", "-I", self.__interface, "ff02::1"],
+                       stdout=PIPE, stderr=PIPE)
         ping.communicate()
 
-        neigh = subprocess.Popen(["ip", "-6", "neigh", "show", "dev", self.__interface],
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        neigh = Popen(["ip", "-6", "neigh", "show", "dev", self.__interface], stdout=PIPE, stderr=PIPE, text=True)
         out = neigh.communicate()
         ips = []
         for line in str(out).split("\\n"):
@@ -39,8 +50,7 @@ class Searcher(Thread):
                     line = f'fe80::{line.split("fe80::")[1]}'
                 ip = line.split(" ")[0]
                 # ping to verify that it is still there
-                ping = subprocess.Popen(["ping", "-c", "1", "-W", "1", "-w", "1", "-I", self.__interface, ip],
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                ping = Popen(["ping", "-c", "1", "-W", "1", "-w", "1", "-I", self.__interface, ip], stdout=PIPE, stderr=PIPE)
                 out = ping.communicate()
 
                 for pingline in str(out).split("\\n"):

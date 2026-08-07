@@ -1,7 +1,5 @@
 # create directories and device nodes
-::sysinit:/bin/mkdir -p /tmp/lock /tmp/run /data/kickstarter /data/kickstarter/files /data/kickstarter/hashes /data/kickstarter/irm /data/kickstarter/ics
-::sysinit:/bin/chown user:users -R /data/kickstarter /data/log
-::sysinit:/bin/ln -s /data/log /var/log
+::sysinit:/bin/prepare_fs.sh
 
 # start SSH server
 ::respawn:/bin/dropbear -R -F -b /etc/banner.txt
@@ -19,7 +17,7 @@
 ::respawn:/bin/mosquitto -c /etc/mosquitto.conf
 
 # start kickstarter
-::respawn:su user -c "/bin/python /home/user/kickstarter/kickstart.py -c /home/user/kickstarter/config.json"
+::respawn:su user -c "/bin/python /home/user/kickstarter/kickstart.py -c /data/etc/kickstarter.json"
 
 ::restart:/sbin/init
 ::shutdown:/sbin/halt

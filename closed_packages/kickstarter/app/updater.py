@@ -1,13 +1,14 @@
 import tempfile
-import os
-import csv
+from os import remove
+from csv import DictReader
 from threading import Thread
 from time import monotonic, sleep
-import datetime
+from datetime import datetime
 from pathlib import Path
-import requests
+from requests import Session
 import urllib3
 import jsonpath
+
 from irm import Irm
 
 class Updater(Thread):
@@ -21,9 +22,8 @@ class Updater(Thread):
         self.__dir_files = Path(dirs['files'])
         self.__dir_irm = Path(dirs['irm'])
         self.__firmware = firmware
-        self.__firmware_version = "-.-"
         self.__firmwares_available = {}
-        self.__session = requests.Session()
+        self.__session = Session()
         self.__session.verify = False # disable HTTPS certificate check
         self.__serialnumber = ""
         self.__message = {
@@ -35,9 +35,6 @@ class Updater(Thread):
             'action':   "---",
             'aftercare': None
         }
-
-        if firmware and int(len(firmware.split('-')) > 1):
-            self.__firmware_version = firmware.split('-')[1]
 
     def run(self):
         if self.__login_rest() is False:
@@ -137,11 +134,11 @@ class Updater(Thread):
 
     def __firmware_update(self):
         # no firmware available, nothing to do
-        if self.__firmware_version == "-.-":
+        if self.__firmware == "---":
             return True
 
         if self.__message['version']:
-            if self.__message['version'] == self.__firmware_version:
+            if self.__message['version'] == self.__firmware:
                 self.__logger.info(f"{self.__serialnumber}: Update not necessary, firmware is already at ({self.__message['version']})")
                 self.__queue.put(self.__message)
                 return True
@@ -159,13 +156,17 @@ class Updater(Thread):
 
         # upload firmware
         self.__message['action'] = 'Uploading firmware'
-        response = self.__upload_file(self.__firmware, self.__dir_files, filetype="firmware")
+        filename = f"autoupdate-{self.__firmware}-full.tar"
+        if self.__message['board'] == "M4CPU":
+            filename = f"autoupdate-{self.__firmware}-full.arm64.tar"
+        response = self.__upload_file(filename, self.__dir_files, filetype="firmware")
         if response is False:
             self.__message['action'] = 'Failed to upload firmware'
             self.__queue.put(self.__message)
             return False
-        elif response is not True:
-            # store firmware permanently, if not already existent
+
+        # store firmware permanently, because it's not already stored on the device
+        if response is not True:
             self.__message['action'] = 'Storing firmware'
             self.__queue.put(self.__message)
             response = self.__perform_autoupdate(response)
@@ -204,7 +205,7 @@ class Updater(Thread):
             if self.__get_serial() is False:
                 continue
 
-            if self.__message['version'] == self.__firmware_version:
+            if self.__message['version'] == self.__firmware:
                 self.__logger.info(f"{self.__serialnumber}: Update finished, firmware on device is: {self.__message['version']}")
                 return True
 
@@ -331,7 +332,7 @@ class Updater(Thread):
 
     def __set_time(self):
         url = f'https://{self.__ip}/api/v2_0/operation'
-        now = datetime.datetime.now()
+        now = datetime.now()
         payload = {}
         payload['method'] = 'manual_action'
         payload['params'] = {   'type': 'set_time',
@@ -426,7 +427,7 @@ class Updater(Thread):
 
         try:
             infile = open(self.__dir_files.joinpath(filename), 'r', encoding='UTF-8')
-            table = csv.DictReader(infile, delimiter=';')
+            table = DictReader(infile, delimiter=';')
         except Exception as e:
             self.__logger.info(f'{self.__serialnumber}: Opening {filename} failed: {str(e)}')
             return False
@@ -460,7 +461,7 @@ class Updater(Thread):
                 outfile.write(line + '\n')
 
         response = self.__upload_file(tmp_file, self.__dir_files)
-        os.remove(tmp_file)
+        remove(tmp_file)
         if response is False:
             return False
 
@@ -493,10 +494,9 @@ class Updater(Thread):
     def __upload_file(self, filename, filedir, filetype=None):
         if filetype and filetype == "firmware":
             # avoid uploading firmware, if it is already there
-            fw = filename.split('-')[1]
             for i in self.__firmwares_available:
                 if i["type"] == "icom_os":
-                    if i["name"] == fw:
+                    if i["name"] == self.__firmware:
                         self.__logger.info(f'{self.__serialnumber}: Uploading {filename} not necessary, it is already available on device')
                         return True
 
@@ -630,19 +630,19 @@ class Updater(Thread):
         url = f'https://{self.__ip}/api/v2_0/firmware'
         payload = {
             "type": "icom_os",
-            "name": f'{self.__firmware_version}',
+            "name": f'{self.__firmware}',
             "issue_reset": True
         }
 
-        self.__logger.info(f"{self.__serialnumber}: Activating firmware {self.__firmware_version}")
+        self.__logger.info(f"{self.__serialnumber}: Activating firmware {self.__firmware}")
         try:
             response = self.__session.put(url, json=payload, verify=False, timeout=300)
         except Exception as e:
-            self.__logger.info(f'{self.__serialnumber}: Activating firmware {self.__firmware_version} failed: {str(e)}')
+            self.__logger.info(f'{self.__serialnumber}: Activating firmware {self.__firmware} failed: {str(e)}')
             return False
 
         if response.status_code != 200:
-            self.__logger.info(f'{self.__serialnumber}: Activating firmware {self.__firmware_version} failed')
+            self.__logger.info(f'{self.__serialnumber}: Activating firmware {self.__firmware} failed')
             return False
 
         return True

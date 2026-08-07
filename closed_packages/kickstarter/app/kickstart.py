@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
-import signal
-import sys
-import os
+from signal import signal, SIGINT
+from sys import exit
+from os import path
 import json
-import csv
-import subprocess
+from  csv import register_dialect, DictWriter
 import argparse
+
 from pathlib import Path
 from queue import Empty, Queue
 import logging.handlers
 from time import sleep
+
 from downloader import Downloader
 from mqtt import Mqtt, Topics
 from updater import Updater
@@ -27,8 +28,7 @@ class Kickstart():
         self.__queue_devices = {}          # key: IP address, value: Queue object of thread
         self.__thread_list = {}            # key: IP address, value: thread object
         self.__existing_list = {}          # key: IP address, value: message struct
-        self.__config_file = "config.json" # path to the config file
-        self.__path_firmware = ''          # path to currently used firmware file
+        self.__config_file = "/data/etc/kickstarter.json" # path to the config file
         self.__path_aftercare = None       # path to data with aftercare data
         self.__path_csv = None             # path to data containing the aftercare data as CSV
         self.__config = {}                 # contains config for this backend
@@ -51,7 +51,7 @@ class Kickstart():
             self.__config_file = ''.join(args.config_path)
         self.__read_configfile()
         if self.__config is False:
-            sys.exit(-1)
+            exit(-1)
 
         # start device searcher
         self.__searcher = Searcher(self.__logger, self.__queue_searcher, self.__config['net']['interface'], self.__config['net']['prefix'])
@@ -74,10 +74,10 @@ class Kickstart():
         self.__file.read_local_files()
 
         # load firmware to update devices to
-        self.__get_firmwarefile_name()
+        self.__get_firmware_version()
 
         # install signal handler to exit
-        signal.signal(signal.SIGINT, self.__shutdown)
+        signal(SIGINT, self.__shutdown)
 
         # clear alarm topic
         self.__mqtt.msg_alert('')
@@ -100,7 +100,7 @@ class Kickstart():
         self.__downloader.shutdown()
         self.__mqtt.shutdown()
         self.__logger.info("Shutting down")
-        sys.exit(0)
+        exit(0)
 
     def __read_configfile(self):
         try:
@@ -108,7 +108,7 @@ class Kickstart():
                 self.__config = json.load(f)
         except Exception as err:
             print("Could not read config file: %s", {err})
-            sys.exit(-1)
+            exit(-1)
 
         self.__profile = self.__config["profile"]
 
@@ -161,7 +161,7 @@ class Kickstart():
         delimiter = ";"
         if 'csv_delimiter' in self.__profile['aftercare']:
             delimiter = self.__profile['aftercare']['csv_delimiter']
-        csv.register_dialect('insys', delimiter=delimiter)
+        register_dialect('insys', delimiter=delimiter)
 
         fieldnames = []
         for i in self.__aftercare_data:
@@ -169,7 +169,7 @@ class Kickstart():
             break
 
         with open(self.__path_csv, 'w', newline='', encoding='utf-8') as outfile:
-            writer = csv.DictWriter(outfile, fieldnames=fieldnames, dialect='insys')
+            writer = DictWriter(outfile, fieldnames=fieldnames, dialect='insys')
             writer.writeheader()
 
             # apppend lines
@@ -178,19 +178,14 @@ class Kickstart():
 
         return True
 
-    # find the firmware file name, that should be flashed
-    def __get_firmwarefile_name(self):
-        name = self.__profile["firmware"]["filename"]
+    # find the firmware version, that should be flashed
+    def __get_firmware_version(self):
+        name = self.__profile["firmware"]["version"]
 
         if name == "latest":
-            self.__path_firmware = self.__file.get_latest_firmware()
-        elif name == "---":
-            self.__path_firmware = None
+            self.__fw_version = self.__file.get_latest_firmware()
         else:
-            self.__path_firmware = name
-
-        if self.__path_firmware and len(self.__path_firmware) > 1:
-            self.__fw_version = self.__path_firmware.split('-')[1]
+            self.__fw_version = name
 
     # default syslogger writing to syslog
     def __create_logger(self, name):
@@ -204,11 +199,11 @@ class Kickstart():
     # find out or own link lokal IP address on the configured eth interface
     def __find_own_ip(self):
         ips = []
-        if not os.path.exists(self.__device_info):
+        if not path.exists(self.__device_info):
             # own IP address only relevant when kickstarter runs on an INSYS device
             return None
 
-        if not os.path.exists(self.__uds):
+        if not path.exists(self.__uds):
             self.__logger.info("Unable to get own IP addresses - is unauthorized access to CLI active?")
             self.__mqtt.msg_alert('This container needs access to the router CLI without authentication, at least the user group "Status"')
             return ips
@@ -216,7 +211,7 @@ class Kickstart():
         cli = Cli(self.__uds)
         if cli is False:
             self.__logger.info("Unable to get own IP addresses")
-            sys.exit(-1)
+            exit(-1)
 
         text = cli.get("status.sysdetail.ip_addresses")
         for line in str(text).split("\n"):
@@ -225,21 +220,6 @@ class Kickstart():
 
         cli.disconnect()
         return ips
-
-    # ping a specific IP address
-    def __ping_device(self, ip):
-        """ ping a specific device """
-        ping = subprocess.Popen(["ping", "-c", "1", "-W", "1", "-I",
-                                 self.__config['net']['interface'], ip],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-        out = ping.communicate()
-
-        for line in str(out).split("\\n"):
-            if "1 packets transmitted, 1 " in line:
-                return True
-
-        return False
 
     # send list of all found devices
     def __send_existing(self):
@@ -317,7 +297,7 @@ class Kickstart():
                 self.__mqtt.msg_profile(self.__profile)
 
                 # load firmware to update devices to
-                self.__get_firmwarefile_name()
+                self.__get_firmware_version()
 
                 # send the current firmware version
                 self.__mqtt.msg_latest_firmware(self.__fw_version)
@@ -337,17 +317,17 @@ class Kickstart():
                 self.__aftercare_data = {}
                 self.__mqtt.msg_aftercare_devices(len(self.__aftercare_data))
 
+    # interprete a message from the downloader
     def __do_downloader_message(self, msg):
         if "firmware" in msg:
             if '-' in msg["firmware"]:
                 fw = msg["firmware"]
-                self.__logger.info(fw)
+
                 self.__fw_version = fw.split('-')[1]
                 self.__mqtt.msg_latest_firmware(self.__fw_version)
 
-                if self.__profile["firmware"]["filename"] == "latest":
-                    self.__path_firmware = fw
-                    self.__profile["firmware"]["filename"] = fw
+                if self.__profile["firmware"]["version"] == "latest":
+                    self.__profile["firmware"]["version"] = fw
 
         if "internet" in msg:
             # broadcast new intenet state to everyone
@@ -397,13 +377,13 @@ class Kickstart():
                 # this is an unknown IP address
                 if ip not in self.__thread_list:
                     # start configuring the device if it is still pingable
-                    if self.__ping_device(ip) is True:
+                    if self.__searcher.ping_device(ip, self.__config['net']['interface']) is True:
                         self.__logger.info('Device found: %s', ip)
                         self.__queue_devices[ip] = Queue()
                         self.__thread_list[ip] = Updater(self.__logger,
                                                          self.__queue_devices[ip],
                                                          "[" + ip + "]",
-                                                         self.__path_firmware,
+                                                         self.__fw_version,
                                                          self.__config['dirs'],
                                                          self.__profile)
 

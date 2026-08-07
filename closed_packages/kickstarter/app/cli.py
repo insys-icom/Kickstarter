@@ -1,4 +1,4 @@
-import socket
+from socket import socket, AF_UNIX, SOCK_STREAM
 
 class Cli():
     def __init__(self, uds):
@@ -7,7 +7,7 @@ class Cli():
         self.connect(uds)
 
     def connect(self, uds):
-        self._cli = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._cli = socket(AF_UNIX, SOCK_STREAM)
         try:
             self._cli.connect(uds)
         except:

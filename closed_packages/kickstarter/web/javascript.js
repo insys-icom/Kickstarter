@@ -46,9 +46,7 @@ function load_store() {
         console.log("create new Store");
     }
     for (i in store["content"]) {
-        console.log("1:" + "content_" + i);
         if (!document.getElementById("content_" + i)) {
-            console.log("break");
             break;
         }
         toggle_box_content(i, store["content"][i]);
@@ -434,7 +432,7 @@ function display_firmware_to_write() {
     while (select.firstChild) {
         select.removeChild(select.lastChild);
     }
-    selected_firmware = profile["firmware"]["filename"];
+    selected_firmware = profile["firmware"]["version"];
 
     // add "---" as none
     var opt = document.createElement('option');
@@ -458,8 +456,11 @@ function display_firmware_to_write() {
         for (var i of localfiles) {
             // only accept full autoupdate files
             if (i["name"].startsWith("autoupdate-")) {
-                if (i["name"].includes("-full.tar")) {
-                    array.push(i["name"]);
+                if (i["name"].includes(".tar")) {
+                    const version = i["name"].split('-')[1];
+                    if (array.includes(version) === false) {
+                        array.push(version);
+                    }
                 }
             }
         }
@@ -597,7 +598,7 @@ function store_settings() {
     profile["initial_login"]["username"] = document.getElementById('initial_login_username').value;
     profile["initial_login"]["password"] = document.getElementById('initial_login_password').value;
 
-    profile["firmware"]["filename"]     = document.getElementById('firmware_to_write').value;
+    profile["firmware"]["version"]      = document.getElementById('firmware_to_write').value;
     profile["config_table"]["filename"] = document.getElementById('config_to_write').value;
 
     profile["auto-update"]["active"]         = document.getElementById('check_active').checked;
