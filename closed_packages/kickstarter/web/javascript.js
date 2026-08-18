@@ -72,7 +72,7 @@ function load_password_show_button() {
 }
 
 // Disable all logging of MQTT client
-function disable_mqtt_log () {;}
+function disable_mqtt_log() {;}
 
 // MQTT got connected
 function on_connect() {
