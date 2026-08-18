@@ -1,11 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 from signal import signal, SIGINT
 from sys import exit
-from os import path
 import json
 from  csv import register_dialect, DictWriter
 import argparse
+from threading import Event
 
 from pathlib import Path
 from queue import Empty, Queue
@@ -16,7 +16,6 @@ from downloader import Downloader
 from mqtt import Mqtt, Topics
 from updater import Updater
 from file import File
-from cli import Cli
 from searcher import Searcher
 
 class Kickstart():
@@ -33,10 +32,11 @@ class Kickstart():
         self.__path_csv = None             # path to data containing the aftercare data as CSV
         self.__config = {}                 # contains config for this backend
         self.__profile = {}                # contains profile, what user wants to put onto devices
+        self.__settings = {}               # contains settings concerning kickstarter itself
         self.__fw_version = "---"          # the firmware we are currently flashing onto devices
         self.__aftercare_data = {}         # all known data from aftercare phases
-        self.__device_info = '/devices/device_info.json'  # path to detect, if this is an INSYS device
-        self.__uds = '/devices/cli_no_auth/cli.socket'    # path to the UDS that gives unauthorized access to the CLI
+        self.__event_shutdown = Event()    # signal to all threads to shut down
+        self.__ips = []                    # list of found devices
 
         # create Logger
         self.__create_logger("kickstarter")
@@ -54,20 +54,26 @@ class Kickstart():
             exit(-1)
 
         # start device searcher
-        self.__searcher = Searcher(self.__logger, self.__queue_searcher, self.__config['net']['interface'], self.__config['net']['prefix'])
+        self.__searcher = Searcher(self.__logger, self.__event_shutdown, self.__queue_searcher, self.__settings)
         self.__searcher.start()
 
         # start MQTT client
-        self.__mqtt = Mqtt(self.__logger, self.__queue_mqtt, self.__config)
+        self.__mqtt = Mqtt(self.__logger, self.__queue_mqtt, self.__settings)
 
         # use MQTT client as an additional logger
         self.__logger.addHandler(self.__mqtt)
 
         # get a File instance
-        self.__file = File(self.__logger, self.__mqtt, self.__config["dirs"])
+        self.__file = File(self.__logger, self.__mqtt, self.__settings["dirs"])
+
+        # set local IPv6 addresses
+        self.__file.reconfigure_net(self.__settings['net']['interface'], self.__settings['net']['prefix'])
+
+        # reconfigure radvd and restart it
+        self.__file.radvd_config(self.__settings['net']['interface'], self.__settings['net']['prefix'])
 
         # start Downloader to get most recent firmware update
-        self.__downloader = Downloader(self.__logger, self.__queue_downloader, self.__config)
+        self.__downloader = Downloader(self.__logger, self.__event_shutdown, self.__queue_downloader, self.__profile, self.__settings)
         self.__downloader.start()
 
         # read all locally stored files
@@ -80,15 +86,15 @@ class Kickstart():
         signal(SIGINT, self.__shutdown)
 
         # clear alarm topic
-        self.__mqtt.msg_alert('')
+        self.__mqtt.publish(Topics.ALERT, '', plain=True, retain=False)
 
         # set a few path variables
         if 'aftercare' in self.__profile:
             if 'logfile' in self.__profile['aftercare']:
-                self.__path_aftercare = Path(self.__config['dirs']['files']).joinpath(self.__profile['aftercare']['logfile'])
+                self.__path_aftercare = Path(self.__settings['dirs']['files']).joinpath(self.__profile['aftercare']['logfile'])
 
             if 'csvfile' in self.__profile['aftercare']:
-                self.__path_csv = Path(self.__config['dirs']['files']).joinpath(self.__profile['aftercare']['csvfile'])
+                self.__path_csv = Path(self.__settings['dirs']['files']).joinpath(self.__profile['aftercare']['csvfile'])
 
         # read all aftercare data from file
         self.__read_aftercare_file()
@@ -97,7 +103,8 @@ class Kickstart():
         self.__mainloop()
 
     def __shutdown(self, frame, x):
-        self.__downloader.shutdown()
+        self.__event_shutdown.set()
+        self.__file.shutdown()
         self.__mqtt.shutdown()
         self.__logger.info("Shutting down")
         exit(0)
@@ -110,7 +117,8 @@ class Kickstart():
             print("Could not read config file: %s", {err})
             exit(-1)
 
-        self.__profile = self.__config["profile"]
+        self.__profile = self.__config['profile']
+        self.__settings = self.__config['settings']
 
     # get history of all finished devices from file
     def __read_aftercare_file(self):
@@ -131,7 +139,7 @@ class Kickstart():
         except Exception as e:
             return False
 
-        self.__mqtt.msg_aftercare_devices(len(self.__aftercare_data))
+        self.__mqtt.publish(Topics.AFTERCARE, len(self.__aftercare_data), plain=True, retain=True)
 
     # append info of aftercare phase to log file
     def __append_aftercare_data(self, message):
@@ -149,7 +157,7 @@ class Kickstart():
             self.__logger.info("Could not store JSON file: " + str(e))
             return False
 
-        self.__mqtt.msg_aftercare_devices(len(self.__aftercare_data))
+        self.__mqtt.publish(Topics.AFTERCARE, len(self.__aftercare_data), plain=True, retain=True)
 
         return True
 
@@ -196,31 +204,6 @@ class Kickstart():
         self.__logger.addHandler(handler)
         self.__logger.info("Started")
 
-    # find out or own link lokal IP address on the configured eth interface
-    def __find_own_ip(self):
-        ips = []
-        if not path.exists(self.__device_info):
-            # own IP address only relevant when kickstarter runs on an INSYS device
-            return None
-
-        if not path.exists(self.__uds):
-            self.__logger.info("Unable to get own IP addresses - is unauthorized access to CLI active?")
-            self.__mqtt.msg_alert('This container needs access to the router CLI without authentication, at least the user group "Status"')
-            return ips
-
-        cli = Cli(self.__uds)
-        if cli is False:
-            self.__logger.info("Unable to get own IP addresses")
-            exit(-1)
-
-        text = cli.get("status.sysdetail.ip_addresses")
-        for line in str(text).split("\n"):
-            if "].ip_address=" in line and "fe80::" in line:
-                ips.append(f'{self.__config['net']['prefix']}{line.split("fe80::")[1].split("/")[0]}')
-
-        cli.disconnect()
-        return ips
-
     # send list of all found devices
     def __send_existing(self):
         j = []
@@ -239,8 +222,7 @@ class Kickstart():
             if 'in_progress' in value:
                 entry['in_progress'] = value['in_progress']
             j.append(entry)
-
-        self.__mqtt.msg_existing_devices(json.dumps(j))
+        self.__mqtt.publish(Topics.DEVICES, j, retain=True)
 
     # collect all messages from threads
     def __get_queue_messages(self, queue):
@@ -253,16 +235,19 @@ class Kickstart():
     # send info about all detected devices
     def __mqtt_hello(self):
         # set status to online
-        self.__mqtt.msg_status_online()
+        self.__mqtt.publish(Topics.STATUS, payload="online", plain=True, retain=True)
 
         # send list of detected devices
         self.__send_existing()
 
         # send the current firmware version
-        self.__mqtt.msg_latest_firmware(self.__fw_version)
+        self.__mqtt.publish(Topics.FW_LATEST, self.__fw_version, plain=True, retain=True)
 
         # send current profile
-        self.__mqtt.msg_profile(self.__profile)
+        self.__mqtt.publish(Topics.PROFILE, self.__profile, retain=True)
+
+        # send the current settings
+        self.__mqtt.publish(Topics.SETTINGS, self.__settings, retain=True)
 
         # send latest log entries
         self.__mqtt.msg_last_log_entries()
@@ -271,7 +256,7 @@ class Kickstart():
         self.__file.read_local_files()
 
         # send number of finished devices in aftercare file
-        self.__mqtt.msg_aftercare_devices(len(self.__aftercare_data))
+        self.__mqtt.publish(Topics.AFTERCARE, len(self.__aftercare_data), plain=True, retain=True)
 
     # interprete an incoming MQTT message
     def __do_mqtt_message(self, msg):
@@ -284,38 +269,68 @@ class Kickstart():
         if "message" in msg:
             m = msg["message"]
 
-            if m.topic == Topics.UPLOAD.fullpath():
+            if m.topic == Topics.UPLOAD:
                 # store the file locally
                 self.__file.store_uploaded_file(json.loads(m.payload))
 
-            elif m.topic == Topics.PROFILE_UP.fullpath():
+            elif m.topic == Topics.PROFILE_UP:
                 # store the received profile in file
                 self.__profile = json.loads(m.payload)
-                self.__file.store_profile(self.__config_file, self.__config, self.__profile)
+                self.__config["profile"] = self.__profile
+                self.__file.store_config(self.__config_file, json.dumps(self.__config, indent=4))
 
                 # broadcast new profile to everyone
-                self.__mqtt.msg_profile(self.__profile)
+                self.__mqtt.publish(Topics.PROFILE, self.__profile, retain=True)
 
                 # load firmware to update devices to
                 self.__get_firmware_version()
 
                 # send the current firmware version
-                self.__mqtt.msg_latest_firmware(self.__fw_version)
+                self.__mqtt.publish(Topics.FW_LATEST, self.__fw_version, plain=True, retain=True)
 
                 # reconfigure downloader thread
-                self.__downloader.config_update(self.__config)
+                self.__downloader.profile_update(self.__profile)
 
-            elif m.topic == Topics.DELETE_FILE.fullpath():
+            elif m.topic == Topics.SETTINGS_UP:
+                settings_new = json.loads(m.payload)
+
+                # compare net settings with current ones and update searcher and restart router advertiser
+                if self.__settings["net"] != settings_new["net"]:
+                    self.__searcher.update_network(settings_new["net"])
+                    self.__file.reconfigure_net(settings_new['net']['interface'], settings_new['net']['prefix'])
+                    self.__file.radvd_config(settings_new['net']['interface'], settings_new['net']['prefix'])
+
+                # compare login settings with current ones
+                if self.__settings["login"] != settings_new["login"]:
+                    self.__file.set_login(settings_new["login"])
+
+                # store the received settings in file
+                self.__settings = settings_new
+                self.__config["settings"] = self.__settings
+                self.__file.store_config(self.__config_file, json.dumps(self.__config, indent=4))
+
+                # broadcast new settings to everyone
+                self.__mqtt.publish(Topics.SETTINGS, self.__settings, retain=True)
+
+            elif m.topic == Topics.DELETE_FILE:
                 self.__file.delete_file(json.loads(m.payload))
 
-            elif m.topic == Topics.AFTERCARE_RESET.fullpath():
+            elif m.topic == Topics.AFTERCARE_RESET:
                 self.__logger.info("Starting new aftercare files due to restart signal")
                 self.__file.rollate_aftercare_files(self.__path_csv, self.__path_aftercare)
                 self.__file.read_local_files()
 
                 # send number of finished devices in aftercare file, should be 0 now
                 self.__aftercare_data = {}
-                self.__mqtt.msg_aftercare_devices(len(self.__aftercare_data))
+                self.__mqtt.publish(Topics.AFTERCARE, len(self.__aftercare_data), plain=True, retain=True)
+
+    # interprete a message from the searcher
+    def __do_searcher_message(self, msg):
+        if "ips" in msg:
+            self.__ips = msg["ips"]
+
+        if "alarm" in msg:
+            self.__mqtt.publish(Topics.ALERT, msg["alarm"], plain=True, retain=False)
 
     # interprete a message from the downloader
     def __do_downloader_message(self, msg):
@@ -324,51 +339,29 @@ class Kickstart():
                 fw = msg["firmware"]
 
                 self.__fw_version = fw.split('-')[1]
-                self.__mqtt.msg_latest_firmware(self.__fw_version)
+                self.__mqtt.publish(Topics.FW_LATEST, self.__fw_version, plain=True, retain=True)
 
                 if self.__profile["firmware"]["version"] == "latest":
                     self.__profile["firmware"]["version"] = fw
 
         if "internet" in msg:
             # broadcast new intenet state to everyone
+            text = "offline"
             if msg["internet"]:
-                self.__mqtt.msg_internet("online")
-            else:
-                self.__mqtt.msg_internet("offline")
+                text = "online"
+            self.__mqtt.publish(Topics.INTERNET, text, plain=True, retain=True)
 
     # never ending main loop
     def __mainloop(self):
         """ endlessly search for new devices and start a configure thread for every found one """
         mqtt_update = False
-        # ignore IPs from config
-        ignore_ips = self.__config['net']['ignore-ips'].split(',')
 
-        # ignore own IPs from this devices
-        own_ips = []
-        while True:
-            ret = self.__find_own_ip()
-            if ret is None:
-                break;
-
-            own_ips = ret
-            if len(own_ips) < 1:
-                sleep(10)
-            else:
-                break
-
-        for i in own_ips:
-            ignore_ips.append(i)
-
-        ips = [] # list of found devices
         while True:
             remove_ips = []
 
-            for ip in ips:
+            # start processing new devices
+            for ip in self.__ips:
                 mqtt_update = False
-
-                # ignore these IPs
-                if ip in ignore_ips:
-                    continue
 
                 # ignore already updated devices:
                 if ip in self.__existing_list:
@@ -376,15 +369,16 @@ class Kickstart():
 
                 # this is an unknown IP address
                 if ip not in self.__thread_list:
+
                     # start configuring the device if it is still pingable
-                    if self.__searcher.ping_device(ip, self.__config['net']['interface']) is True:
+                    if self.__searcher.ping_device(ip, self.__settings['net']['interface']) is True:
                         self.__logger.info('Device found: %s', ip)
                         self.__queue_devices[ip] = Queue()
                         self.__thread_list[ip] = Updater(self.__logger,
                                                          self.__queue_devices[ip],
                                                          "[" + ip + "]",
                                                          self.__fw_version,
-                                                         self.__config['dirs'],
+                                                         self.__settings['dirs'],
                                                          self.__profile)
 
                         # start the thread
@@ -394,7 +388,7 @@ class Kickstart():
                         remove_ips.append(ip)
 
             # wait for messages from the updating threads
-            for ip in ips:
+            for ip in self.__ips:
                 try:
                     message = self.__queue_devices[ip].get(block=False)
                     self.__queue_devices[ip].task_done()
@@ -424,8 +418,8 @@ class Kickstart():
             repeat = True
             while repeat:
                 repeat = False
-                for i in self.__existing_list:
-                    if i not in ips:
+                for i, _ in self.__existing_list.items():
+                    if i not in self.__ips:
                         if self.__existing_list[i]['in_progress'] is not True:
                             del self.__existing_list[i]
                             mqtt_update = True
@@ -443,8 +437,8 @@ class Kickstart():
 
             # read incoming message from device searcher
             msg = self.__get_queue_messages(self.__queue_searcher)
-            if msg is not None:
-                ips = msg
+            if msg:
+                self.__do_searcher_message(msg)
 
             # read incoming message from downloader
             msg = self.__get_queue_messages(self.__queue_downloader)

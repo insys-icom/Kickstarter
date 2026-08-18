@@ -33,19 +33,18 @@ dir /data/etc                   0755 0 0
 dir /devices                    0755 0 0
 dir /devices/cli_no_auth        0755 0 0
 dir /etc                        0755 0 0
-dir /etc/httpd                  0755 0 0
 dir /etc/dropbear               0755 0 0
 dir /etc/ssl                    0755 0 0
 dir /etc/ssl/certs              0755 0 0
 dir /home                       0755 0 0
 dir /home/user                  0755 1000 1000
 dir /home/user/.ssh             0700 1000 1000
-dir /home/user/kickstarter      0755 1000 1000
 dir /lib                        0755 0 0
 dir /licence                    0755 0 0
 dir /proc                       0755 0 0
 dir /root                       0700 0 0
 dir /root/.ssh                  0700 0 0
+dir /root/kickstarter           0700 0 0
 dir /shared                     0755 0 0
 dir /sys                        0755 0 0
 dir /tmp                        0777 0 0
@@ -58,15 +57,12 @@ dir /usr/share/terminfo         0755 0 0
 dir /usr/share/terminfo/x       0755 0 0
 dir /usr/share/zoneinfo         0755 0 0
 dir /var                        0755 0 0
-#dir /var/log                    0755 0 0
 dir /var/spool                  0755 0 0
 dir /var/spool/cron             0755 0 0
 dir /var/spool/cron/crontabs    0755 0 0
 dir /var/web                    0755 0 0
 dir /var/web/pics               0755 0 0
 dir /var/web/help               0755 0 0
-
-slink /data/log /var/log        0777 0 0
 
 include snippets/busybox.txt
 include snippets/dropbear.txt
@@ -89,10 +85,11 @@ file /etc/nsswitch.conf               ${SKELETON_DIR}/etc/nsswitch.conf         
 file /etc/passwd                      ${SKELETON_DIR}/etc/passwd                     0644 0 0
 file /etc/profile                     ${SKELETON_DIR}/etc/profile                    0644 0 0
 file /etc/resolv.conf                 ${SKELETON_DIR}/etc/resolv.conf                0644 0 0
-file /etc/shadow                      ${SKELETON_DIR}/etc/shadow                     0640 0 0
+file /etc/shadow_default              ${SKELETON_DIR}/etc/shadow_default             0640 0 0
 file /etc/shells                      ${SKELETON_DIR}/etc/shells                     0644 0 0
 file /etc/protocols                   ${SKELETON_DIR}/etc/protocols                  0644 0 0
 file /etc/radvd.conf                  ${SKELETON_DIR}/etc/radvd.conf                 0644 0 0
+file /etc/radvd_template.conf         ${SKELETON_DIR}/etc/radvd_template.conf        0644 0 0
 file /etc/mosquitto.conf              ${SKELETON_DIR}/etc/mosquitto.conf             0644 0 0
 slink /etc/ssl/certs/ca-certificates.crt /usr/share/cacert.pem                       0777 0 0
 
@@ -101,19 +98,19 @@ file /lib/libpcre2-8.so.0             ${STAGING_DIR}/lib/libpcre2-8.so.0        
 file /lib/libssl.so.3                 ${STAGING_DIR}/lib/libssl.so                   0644 0 0
 file /lib/libcrypto.so.3              ${STAGING_DIR}/lib/libcrypto.so                0644 0 0
 file /lib/libcjson.so.1               ${STAGING_DIR}/lib/libcjson.so.1               0755 0 0
-file /lib/libwebsockets.so.19         ${STAGING_DIR}/lib/libwebsockets.so.19         0755 0 0
+file /lib/libwebsockets.so            ${STAGING_DIR}/lib/libwebsockets.so            0755 0 0
 file /lib/libffi.so.8                 ${STAGING_DIR}/lib/libffi.so.8                 0755 0 0
 file /lib/libcrypt.so.1               ${STAGING_DIR}/lib/libcrypt.so.1               0755 0 0
 
-file /home/user/kickstarter/config_template.json  ${CLOSED_PACKAGES_DIR}/kickstarter/app/config_template.json   0644 1000 1000
-file /home/user/kickstarter/cli.py          ${CLOSED_PACKAGES_DIR}/kickstarter/app/cli.py          0644 1000 1000
-file /home/user/kickstarter/downloader.py   ${CLOSED_PACKAGES_DIR}/kickstarter/app/downloader.py   0644 1000 1000
-file /home/user/kickstarter/file.py         ${CLOSED_PACKAGES_DIR}/kickstarter/app/file.py         0644 1000 1000
-file /home/user/kickstarter/irm.py          ${CLOSED_PACKAGES_DIR}/kickstarter/app/irm.py          0644 1000 1000
-file /home/user/kickstarter/kickstart.py    ${CLOSED_PACKAGES_DIR}/kickstarter/app/kickstart.py    0755 1000 1000
-file /home/user/kickstarter/mqtt.py         ${CLOSED_PACKAGES_DIR}/kickstarter/app/mqtt.py         0644 1000 1000
-file /home/user/kickstarter/searcher.py     ${CLOSED_PACKAGES_DIR}/kickstarter/app/searcher.py     0644 1000 1000
-file /home/user/kickstarter/updater.py      ${CLOSED_PACKAGES_DIR}/kickstarter/app/updater.py      0644 1000 1000
+file /root/kickstarter/config_template.json  ${CLOSED_PACKAGES_DIR}/kickstarter/app/config_template.json   0644 0 0
+file /root/kickstarter/cli.py          ${CLOSED_PACKAGES_DIR}/kickstarter/app/cli.py          0644 0 0
+file /root/kickstarter/downloader.py   ${CLOSED_PACKAGES_DIR}/kickstarter/app/downloader.py   0644 0 0
+file /root/kickstarter/file.py         ${CLOSED_PACKAGES_DIR}/kickstarter/app/file.py         0644 0 0
+file /root/kickstarter/irm.py          ${CLOSED_PACKAGES_DIR}/kickstarter/app/irm.py          0644 0 0
+file /root/kickstarter/kickstart.py    ${CLOSED_PACKAGES_DIR}/kickstarter/app/kickstart.py    0755 0 0
+file /root/kickstarter/mqtt.py         ${CLOSED_PACKAGES_DIR}/kickstarter/app/mqtt.py         0644 0 0
+file /root/kickstarter/searcher.py     ${CLOSED_PACKAGES_DIR}/kickstarter/app/searcher.py     0644 0 0
+file /root/kickstarter/updater.py      ${CLOSED_PACKAGES_DIR}/kickstarter/app/updater.py      0644 0 0
 
 slink /run                            tmp/run                                        0777 0 0
 slink /sbin                           bin                                            0777 0 0
@@ -137,6 +134,7 @@ file /var/web/mqtt.min.js             ${STAGING_DIR}/usr/local/lib/mqtt.min.js  
 
 file /var/web/pics/down.png           ${CLOSED_PACKAGES_DIR}/kickstarter/web/pics/down.png         0644 0 0
 file /var/web/pics/download.png       ${CLOSED_PACKAGES_DIR}/kickstarter/web/pics/download.png     0644 0 0
+file /var/web/pics/eye.png            ${CLOSED_PACKAGES_DIR}/kickstarter/web/pics/eye.png          0644 0 0
 file /var/web/pics/favicon.ico        ${CLOSED_PACKAGES_DIR}/kickstarter/web/pics/favicon.ico      0644 0 0
 file /var/web/pics/gear.png           ${CLOSED_PACKAGES_DIR}/kickstarter/web/pics/gear.png         0644 0 0
 file /var/web/pics/gear_active.gif    ${CLOSED_PACKAGES_DIR}/kickstarter/web/pics/gear_active.gif  0644 0 0
@@ -152,8 +150,9 @@ file /var/web/pics/logo_insys.png     ${CLOSED_PACKAGES_DIR}/kickstarter/web/pic
 
 file /var/web/help/files.html         ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/files.html       0644 0 0
 file /var/web/help/overview.html      ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/overview.html    0644 0 0
-file /var/web/help/settings.html      ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/settings.html    0644 0 0
-file /var/web/help/status.html        ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/status.html      0644 0 0
+file /var/web/help/device_settings.html       ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/device_settings.html       0644 0 0
+file /var/web/help/kickstarter_settings.html  ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/kickstarter_settings.html  0644 0 0
+file /var/web/help/status.html                ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/status.html                0644 0 0
 
 ############################
 # Python files             #

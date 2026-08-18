@@ -1,0 +1,15 @@
+<h2>Kickstarter settings</h2>
+
+<p>These settings are Kickstarter internal settings, so it can operate.</p>
+
+<h4>Login for the Kickstarter site</h4>
+<p>Optionally you can protect this web site with user name and password. If no username or password is given, the protection also gets turned off.</p>
+
+<p>If protection gets activated, also the SSH access for the user root will get protected by the given password. The login user for SSH will stay &quot;root&quot;, only the password will get changed.</p>
+
+<h4>Network settings</h4>
+<p>Kickstarter will run a router advertiser daemon on the selected Interface. Make sure, that this interface is bridged to the correct net of the hosting router, where you want to plug the fresh INSYS router to.</p>
+
+<p>The configured IPv6 prefix will be advertised by the routers advertiser. All IPv6 capable devices will use SLAAC and get an IPv6 address in that subnet. It's highly recommended to use an ULA as prefix.</p>
+
+<p>If there are INSYS devices in the bridged network, where Kickstarter will work and which should not get processed by Kickstarter, these IPv6 addresses can be listed here. Several IPv6 addresses devided by colons can be entered.</p>

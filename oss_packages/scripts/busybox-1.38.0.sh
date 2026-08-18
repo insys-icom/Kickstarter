@@ -1,17 +1,16 @@
 #!/bin/sh
 
 # name of directory after extracting the archive in working directory
-PKG_DIR="busybox-1.36.1"
+PKG_DIR="busybox-1.38.0"
 
 # name of the archive in dl directory (use "none" if empty)
 PKG_ARCHIVE_FILE="${PKG_DIR}.tar.bz2"
 
 # download link for the sources to be stored in dl directory (use "none" if empty)
-#PKG_DOWNLOAD="https://busybox.net/downloads/${PKG_ARCHIVE_FILE}"
-PKG_DOWNLOAD="https://m3-container.net/M3_Container/oss_packages/${PKG_ARCHIVE_FILE}"
+PKG_DOWNLOAD="https://busybox.net/downloads/${PKG_ARCHIVE_FILE}"
 
 # md5 checksum of archive in dl directory (use "none" if empty)
-PKG_CHECKSUM="0fc591bc9f4e365dfd9ade0014f32561"
+PKG_CHECKSUM="34f9ea6ff8636f2c9241153b9114eefa9e65674a45318ae1ef95bb5f31c53bb2"
 
 
 
@@ -32,7 +31,7 @@ BBOX_OVERLAY_CONFIG=$(echo "${BBOX_BUILD_DIR}/.config${BUILD_SUFFIX}" | sed "s#$
 configure()
 {
     cd "${PKG_BUILD_DIR}"
-    cp -av "${BBOX_OVERLAY_CONFIG}" "${BBOX_BUILD_DIR}/.config"
+    cp -a "${BBOX_OVERLAY_CONFIG}" "${BBOX_BUILD_DIR}/.config"
 
     make ${M3_MAKEFLAGS} \
          V=1 \
@@ -49,22 +48,22 @@ configure()
 menuconfig()
 {
     cd "${PKG_BUILD_DIR}"
-    cp -av "${BBOX_OVERLAY_CONFIG}" "${BBOX_BUILD_DIR}/.config"
+    cp -a "${BBOX_OVERLAY_CONFIG}" "${BBOX_BUILD_DIR}/.config"
 
-    # add return type "int" to test programm for new compilers
-    sed -i "s|^main() {}|int main() {}|" "${PKG_BUILD_DIR}/scripts/kconfig/lxdialog/check-lxdialog.sh"
     make ${M3_MAKEFLAGS} \
          V=1 \
          O="${BBOX_BUILD_DIR}" \
-         CONFIG_EXTRA_CFLAGS="${M3_CFLAGS} -I${STAGING_INCLUDE}" \
-         CONFIG_EXTRA_LDFLAGS="${M3_LDFLAGS} -L${STAGING_LIB}" \
+         CONFIG_EXTRA_CFLAGS="${M3_CFLAGS} \
+         -I${STAGING_INCLUDE}" \
+         CONFIG_EXTRA_LDFLAGS="${M3_LDFLAGS} \
+         -L${STAGING_LIB}" \
          AR="${AR}" \
          RANLIB="${RANLIB}" \
          NM="${NM}" \
          CROSS_COMPILE=${M3_CROSS_COMPILE} \
          menuconfig
 
-    cp -av "${BBOX_BUILD_DIR}/.config" "${BBOX_OVERLAY_CONFIG}"
+    cp -a "${BBOX_BUILD_DIR}/.config" "${BBOX_OVERLAY_CONFIG}"
 }
 
 compile()
@@ -95,8 +94,8 @@ install_staging()
 
 uninstall_staging()
 {
-    rm -vf "${STAGING_DIR}/bin/busybox"
-    rm -vf "${STAGING_DIR}/bin/busybox.links"
+    rm -f "${STAGING_DIR}/bin/busybox"
+    rm -f "${STAGING_DIR}/bin/busybox.links"
 }
 
 . ${HELPERSDIR}/call_functions.sh

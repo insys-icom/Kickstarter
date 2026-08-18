@@ -1,12 +1,16 @@
-import threading
+from threading import Thread, Event
 from os import path, makedirs, sync, remove, scandir, rename, listdir
-import json
 from base64 import b64decode
 from datetime import datetime
 from pathlib import Path
 import asyncio
 from hashlib import sha256
+from subprocess import Popen, PIPE, check_output
+from string import Template
+
 from asyncinotify import Inotify, Mask
+
+from mqtt import Topics
 
 class File():
     def __init__(self, logger, mqtt, dirs):
@@ -21,11 +25,15 @@ class File():
             makedirs(self.__filepath)
 
         # start observing the locally stored files in a thread
-        _thread = threading.Thread(target=self.__wrap_async_func, args=[self.__filepath])
-        _thread.start()
+        self._shutdown = Event()
+        self._thread = Thread(target=self.__wrap_async_func, args=[self.__filepath, self._shutdown])
+        self._thread.start()
 
-    def __wrap_async_func(self, args):
-        asyncio.run(self.__observe_dir(args))
+    def shutdown(self):
+        self.__logger.info("Shutting down file monitor")
+
+    def __wrap_async_func(self, watch_path, shutdown):
+        asyncio.run(self.__observe_dir(watch_path, shutdown))
 
     # store a file uploaded via MQTT
     def store_uploaded_file(self, j):
@@ -65,17 +73,16 @@ class File():
             # ignore errors when deleting the HASH file; there is none when it's an self generated one
             try:
                 remove(self.__hashpath.joinpath(msg["filename"]))
-            except Exception as e:
+            except:
                 pass
 
             return True
         return False
 
-    def store_profile(self, filepath, config, profile):
+    def store_config(self, filepath, content):
         try:
             with open(filepath, "w+", encoding='UTF-8') as f:
-                config["profile"] = profile
-                f.write(json.dumps(config, indent=4))
+                f.write(content)
         except Exception as err:
             self.__logger.info(f"Could not write config file: {err}")
             return False
@@ -86,8 +93,7 @@ class File():
         h = "---"
         try:
             f = open(self.__hashpath.joinpath(file), "r", encoding="UTF-8")
-        except Exception as e:
-            #self.__logger.info(f"Could not read sha256sum of file {file} : {str(e)}")
+        except:
             return h
 
         h = f.read()
@@ -110,7 +116,7 @@ class File():
             self.__local_files = sorted(files, key=lambda d: d['name'])
 
             # send existing locally stored files
-            self.__mqtt.msg_local_files(self.__local_files)
+            self.__mqtt.publish(Topics.LOCALFILES, self.__local_files, retain=True)
 
         return True
 
@@ -118,9 +124,12 @@ class File():
         file_list = listdir(self.__filepath)
         version = 0
         for f in file_list:
-            if "autoupdate-" in f and "-full.tar" in f[-9:]:
+            if "autoupdate-" in f[:-11] and ("-full.tar" in f[-9:] or
+                                       "-full.arm32.tar" in f[-15:] or
+                                       "-full.arm64.tar" in f[-15:]):
                 try:
-                    version = max(version, float(f.split('-')[1]))
+                    version_in_filename = float(f.split('-')[1])
+                    version = max(version, version_in_filename)
                 except:
                     pass
 
@@ -143,7 +152,7 @@ class File():
             result = Path(directory).joinpath(now + "_" + base)
             rename(log_path, result)
 
-    async def __observe_dir(self, watch_path):
+    async def __observe_dir(self, watch_path, shutdown):
         mask = Mask.DELETE | Mask.DELETE_SELF | Mask.CLOSE_WRITE
         with Inotify() as inotify:
             inotify.add_watch(Path(watch_path), mask)
@@ -152,3 +161,84 @@ class File():
                 self.read_local_files()
                 if event.mask == Mask.IGNORED:
                     inotify.add_watch(Path(watch_path), mask)
+
+    # flush all IPv6 addresses from an interface and set new link local one and add the first address of the given prefix
+    def reconfigure_net(self, interface, prefix):
+        with Popen(["/bin/ip", "-6", "address", "flush", "dev", interface ]) as cmd:
+            cmd.communicate()
+
+        with Popen(["/bin/ip", "-6", "address", "add", "fe80::1/64", "dev", interface ]) as cmd:
+            cmd.communicate()
+
+        with Popen(["/bin/ip", "-6", "address", "add", f"{prefix}1/64", "dev", interface ]) as cmd:
+            cmd.communicate()
+
+    # write a new radvd config file and restart radvd
+    def radvd_config(self, interface, prefix):
+        template = ""
+
+        # read template
+        try:
+            with open("/etc/radvd_template.conf", "r", encoding='UTF-8') as f:
+                template = f.read()
+        except Exception as e:
+            self.__logger.info(f"Error: Could not read radvd config: {str(e)}")
+            return False
+
+        # create new config
+        s = Template(template)
+        try:
+            s = s.safe_substitute(INTERFACE=interface, PREFIX=prefix)
+        except Exception as e:
+            self.__logger.info(f"Error: Could not substitute values in radvd config template: {str(e)}")
+            return False
+
+        # write new config to file
+        try:
+            with open("/etc/radvd.conf", "wb") as f:
+                f.write(bytes(s, 'UTF-8'))
+        except Exception as e:
+            self.__logger.info(f"Error: Could not write radvd config: {str(e)}")
+            return False
+
+        # get radvd PID and kill it
+        pid = ""
+        try:
+            with open("/tmp/radvd.pid", "r", encoding='UTF-8') as f:
+                pid = f.read().strip("\n")
+        except Exception as e:
+            self.__logger.info(f"Error: Could not read radvd PID file: {str(e)}")
+            return False
+
+        with Popen(["kill", pid], stdout=PIPE, stderr=PIPE) as kill:
+            kill.communicate()
+
+        return True
+
+    # set login for http and ssh
+    def set_login(self, login):
+        active = login["active"]
+        username = login["username"]
+        password = login["password"]
+
+        if username == "" or password == "":
+            active = False
+
+        # create a new config file for httpd
+        with open("/data/etc/httpd.conf", "w+", encoding='UTF-8') as f:
+            line = ""
+            if active:
+                line = f"/:{username}:{password}\n"
+            f.write(line)
+
+        # let httpd restart by init
+        with Popen(["killall", "httpd"], stdout=PIPE, stderr=PIPE) as kill:
+            kill.communicate()
+
+        # set password of root to the same
+        if active is False:
+            password = "root"
+
+        with Popen([ "/bin/echo", f"root:{password}" ], stdout=PIPE) as ps:
+            check_output(('chpasswd'), stdin=ps.stdout)
+            ps.wait()

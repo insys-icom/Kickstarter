@@ -1,0 +1,92 @@
+{
+    "settings": {
+        "login": {
+            "active": false,
+            "username": "",
+            "password": ""
+        },
+
+        "net": {
+            "interface": "eth0",
+            "prefix": "fdc2::",
+            "ignore_ips": ""
+        },
+
+        "mqtt": {
+            "url": "::1",
+            "port": "8883"
+        },
+
+        "dirs": {
+            "log":       "/var/log/kickstarter/current",
+            "files":     "/data/kickstarter/files",
+            "hashes":    "/data/kickstarter/hashes",
+            "irm":       "/data/kickstarter/irm",
+            "ics":       "/data/kickstarter/ics"
+        }
+    },
+
+    "profile": {
+        "initial_login": {
+            "username": "",
+            "password": ""
+        },
+
+        "auto-update": {
+            "active": false,
+            "uri": "https://autoupdate.insys-tec.net/m3/list_files/bleeding_full.txt",
+            "check_interval": "24"
+        },
+
+        "firmware": {
+            "version": "---"
+        },
+
+        "uploads": [
+        ],
+
+        "config_table": {
+            "filename": "---"
+        },
+
+        "irm": {
+            "active": false,
+            "uri": "https://api.insys-tec.net/api",
+            "token": "",
+            "group": "Fresh devices"
+        },
+
+        "ics": {
+            "active": false,
+            "uri": ""
+        },
+
+        "aftercare": {
+            "active": false,
+            "login": {
+                "username": "",
+                "password": ""
+            },
+            "logfile": "detected_devices.json",
+            "csvfile": "detected_devices.csv",
+            "csv_delimiter": ";",
+            "requests": [
+                {
+                    "name": "serial_number",
+                    "request": "/api/v2_0/status/device_info",
+                    "jsonpath": "status.list[0].serial_number"
+                },
+                {
+                    "name": "icomOS",
+                    "request": "/api/v2_0/status/device_info",
+                    "jsonpath": "status.list[0].firmware_version"
+                },
+                {
+                    "name": "type",
+                    "request": "/api/v2_0/status/device_info",
+                    "jsonpath": "status.list[0].board_type"
+                }
+            ]
+		}
+    }
+}

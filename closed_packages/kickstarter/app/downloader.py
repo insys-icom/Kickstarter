@@ -9,34 +9,32 @@ import requests
 
 
 class Downloader(Thread):
-    def __init__(self, logger, queue, config):
+    def __init__(self, logger, shutdown, queue, profile, settings):
         Thread.__init__(self)
         disable_warnings()
         self.__logger = logger
         self.__queue = queue
-        self.__shutdown = False
-        self.__config = config
-        self.__profile = self.__config["profile"]
+        self.__shutdown = shutdown
+        self.__profile = profile
+        self.__settings = settings
         self.__check_intervall = 0
         self.__time_checked = 0
         self.__online = False
 
     def run(self):
-        self.config_update(self.__config)
-        while self.__shutdown is False:
-            self.__search_new_firmware()
+        self.profile_update(self.__profile)
+        while True:
+            if self.__shutdown.wait(timeout=15):
+                self.__logger.info('Shutting down downloader')
+                break
+
             self.__check_internet(self.__profile['auto-update']['uri'])
-            sleep(15)
+            self.__search_new_firmware()
 
-    def shutdown(self):
-        self.__logger.info('Shutting down downloader')
-        self.__shutdown = True
-
-    def config_update(self, config):
+    def profile_update(self, profile):
         self.__check_intervall = int(self.__profile['auto-update']['check_interval']) * 3600
         self.__time_checked = 0 - self.__check_intervall
-        self.__config = config
-        self.__profile = self.__config["profile"]
+        self.__profile = profile
         self.__logger.info(f'Set checking for new firmware to "{self.__profile["auto-update"]["active"]}"')
 
     # get head of URI of Auto Update server to check for internet connection state
@@ -112,7 +110,7 @@ class Downloader(Thread):
         firmware_file_name = dl_path.split('/')[1:][1:][0].rstrip()
 
         # create the target directory if it does not exist
-        firmware_path = Path(self.__config['dirs']['files'])
+        firmware_path = Path(self.__settings['dirs']['files'])
 
         # download the file for arm32
         self.__download_file(dl_path, firmware_path, firmware_file_name, protocol, hostname)
@@ -151,7 +149,7 @@ class Downloader(Thread):
 
         # create hash file
         with open(firmware_path, 'rb') as f:
-            hashes_path = Path(self.__config['dirs']['hashes']).joinpath(firmware_file_name)
+            hashes_path = Path(self.__settings['dirs']['hashes']).joinpath(firmware_file_name)
             data = f.read()
             try:
                 h = open(hashes_path, "w", encoding="UTF-8")

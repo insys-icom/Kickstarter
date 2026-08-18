@@ -11,13 +11,13 @@
 ::respawn:/bin/radvd -C /etc/radvd.conf -n -p /tmp/radvd.pid -m syslog
 
 # start web server vor MQTT broker access
-::respawn:/bin/httpd -f -p 80 -h /var/web -u nobody:nogroup
+::respawn:/bin/httpd -f -p 80 -h /var/web -u nobody:nogroup -c /data/etc/httpd.conf
 
 # start MQTT broker
 ::respawn:/bin/mosquitto -c /etc/mosquitto.conf
 
 # start kickstarter
-::respawn:su user -c "/bin/python /home/user/kickstarter/kickstart.py -c /data/etc/kickstarter.json"
+::respawn:/bin/python /root/kickstarter/kickstart.py -c /data/etc/kickstarter.json
 
 ::restart:/sbin/init
 ::shutdown:/sbin/halt

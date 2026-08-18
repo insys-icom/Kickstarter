@@ -16,31 +16,36 @@
     <div class="box box_navi">
         <div class="menue-buttons">
             <fieldset>
-                <br>
                 <table>
                     <tr><td align="center"><img src="pics/logo_insys.png"></td></tr>
                     <tr><td align="center"><h4>KICKSTARTER</h4></td></tr>
                     <tr><td><input type="radio" onclick="view_boxes('status')" name="menue" value="Status" id="rb_status" />
                             <label for="rb_status">Status</label></td></tr>
-                    <tr><td><input type="radio" onclick="view_boxes('settings')" name="menue" value="Settings" id="rb_settings" />
-                            <label for="rb_settings">Settings</label></td></tr>
+                    <tr><td><input type="radio" onclick="view_boxes('device_settings')" name="menue" value="Device settings" id="rb_device_settings" />
+                            <label for="rb_device_settings">Device settings</label></td></tr>
+                    <tr><td><input type="radio" onclick="view_boxes('kickstarter_settings')" name="menue" value="Kickstarter settings" id="rb_kickstarter_settings" />
+                            <label for="rb_kickstarter_settings">Kickstarter settings</label></td></tr>
                     <tr><td><input type="radio" onclick="view_boxes('files')" name="menue" value="Files" id="rb_files" />
                             <label for="rb_files">Files</label></td></tr>
                     <tr><td><input type="radio" onclick="view_boxes('help')" name="menue" value="Help" id="rb_help" />
                         <label for="rb_help">Help</label></td></tr>
                 </table>
             </fieldset>
+
+            <div class="box_help_index">
+                <table>
+                    <tr><td align="center"><button class="astext" onclick="help_chapter('overview.html')">Overview</button></td></tr>
+                    <tr><td align="center"><button class="astext" onclick="help_chapter('status.html')">Status</button></td></tr>
+                    <tr><td align="center"><button class="astext" onclick="help_chapter('device_settings.html')">Device settings</button></td></tr>
+                    <tr><td align="center"><button class="astext" onclick="help_chapter('kickstarter_settings.html')">Kickstarter settings</button></td></tr>
+                    <tr><td align="center"><button class="astext" onclick="help_chapter('files.html')">Files</button></td></tr>
+                </table>
+            </div>
         </div>
     </div>
 </navi>
 
-<top>
-    <div class="box box_top">
-    </div>
-</top>
-
 <left id="left">
-    <br>
     <div class="box box_status">
         <h3>Status</h3>
         <p style="color:red;" id="alert"></p>
@@ -60,8 +65,7 @@
                             <td id="aftercare_entries">---</td>
                         </tr>
                         <tr><td>Start new aftercare file</td>
-                            <td><input id="aftercare_reset" onclick="aftercare_reset()"
-                                       name="aftercare_reset" type="button" value="Start new file"></td>
+                            <td><input id="aftercare_reset" onclick="aftercare_reset()" type="button" value="Start new file"></td>
                         </tr>
                     </table>
                 </td>
@@ -74,7 +78,7 @@
         <table class="list_table" id="devicetable"></table>
     </div>
 
-    <div class="box box_settings">
+    <div class="box box_device_settings">
         <h3><input id="pic_toggle_init_login" type="image" src="pics/down.png" width="15px"
                    onclick="toggle_box_content('init_login', 'toggle')"> Initial login</h3>
         <div id="content_init_login" style="display: none;">
@@ -82,68 +86,68 @@
             <table>
                 <tr>
                     <td>User name for device login</td>
-                    <td><input id="initial_login_username" name="initial_login_username" type="text" size=45></td>
+                    <td><input id="initial_login_username" type="text" size=45></td>
                 </tr>
                 <tr>
                     <td>Password for device login</td>
-                    <td><input id="initial_login_password" name="initial_login_password" type="text" size=45></td>
+                    <td><input id="initial_login_password" type="text" size=45></td>
                 </tr>
             </table>
         </div>
     </div>
 
-    <div class="box box_settings">
+    <div class="box box_device_settings">
         <h3><input id="pic_toggle_upload_firmware" type="image" src="pics/down.png" width="15px"
                    onclick="toggle_box_content('upload_firmware', 'toggle')"> Uploading Firmware</h3>
         <div id="content_upload_firmware" style="display: none;">
             <table>
                 <tr>
                     <td>Firmware version</td>
-                    <td><select id="firmware_to_write" name="firmware_to_write"> </select></td>
+                    <td><select id="firmware_to_write" > </select></td>
                 </tr>
                 <tr><td>&nbsp;</td></tr>
                 <tr>
                     <td>Check for new firmware</td>
-                    <td><input id="check_active" name="check_active" type="checkbox"></td>
+                    <td><input id="check_active" type="checkbox"></td>
                 </tr>
                 <tr>
                     <td>Interval for firmware check</td>
-                    <td><input id="check_interval" name="check_interval" type="text" size=4> hours</td>
+                    <td><input id="check_interval" type="text" size=4> hours</td>
                 </tr>
                 <tr>
                     <td>URI for firmware check</td>
-                    <td><input id="check_uri" name="check_uri" type="text" size=55></td>
+                    <td><input id="check_uri" type="text" size=55></td>
                 </tr>
             </table>
         </div>
     </div>
 
-    <div class="box box_settings">
+    <div class="box box_device_settings">
         <h3><input id="pic_toggle_register_irm" type="image" src="pics/down.png" width="15px"
                    onclick="toggle_box_content('register_irm', 'toggle')"> Register device at iRM (icom Router Management)</h3>
         <div id="content_register_irm" style="display: none;">
             <table>
                 <tr>
                     <td>Activate registration of device</td>
-                    <td><input id="irm_active" name="irm_active" type="checkbox"></td>
+                    <td><input id="irm_active" type="checkbox"></td>
                 </tr>
                 <tr>
                     <td>URI of iRM API</td>
-                    <td><input id="irm_uri" name="irm_uri" type="text" size=55></td>
+                    <td><input id="irm_uri" type="text" size=55></td>
                 </tr>
                 <tr>
                     <td>API token</td>
-                    <td><input id="irm_token" name="irm_token" type="text" size=55></td>
+                    <td><input id="irm_token" type="text" size=55></td>
                 </tr>
                 <tr>
                     <td>Group for new devices</td>
-                    <td><input id="irm_group" name="irm_group" type="text" size=55></td>
+                    <td><input id="irm_group" type="text" size=55></td>
                 </tr>
             </table>
         </div>
     </div>
 
-    <div class="box box_settings">
+    <div class="box box_device_settings">
         <h3><input id="pic_toggle_upload_more" type="image" src="pics/down.png" width="15px"
                    onclick="toggle_box_content('upload_more', 'toggle')"> Uploading more (e.g. container, profiles, licenses)</h3>
         <div id="content_upload_more" style="display: none;">
@@ -151,64 +155,115 @@
         </div>
     </div>
 
-    <div class="box box_settings">
+    <div class="box box_device_settings">
         <h3><input id="pic_toggle_upload_csv" type="image" src="pics/down.png" width="15px"
                    onclick="toggle_box_content('upload_csv', 'toggle')"> Upload and apply CSV config table</h3>
         <div id="content_upload_csv" style="display: none;">
             <table>
                 <tr>
                     <td>Config table</td>
-                    <td><select id="config_to_write" name="config_to_write"> </select></td>
-                    <td><input id="download_config" name="download_config" hidden="true"></td>
+                    <td><select id="config_to_write"> </select></td>
+                    <td><input id="download_config" hidden="true"></td>
                 </tr>
             </table>
         </div>
     </div>
 
-    <div class="box box_settings">
+    <div class="box box_device_settings">
         <h3><input id="pic_toggle_aftercare" type="image" src="pics/down.png" width="15px"
                    onclick="toggle_box_content('aftercare', 'toggle')"> Aftercare: HTTP(S) requests to the finished devices</h3>
         <div id="content_aftercare" style="display: none;">
             <table>
                 <tr>
                     <td>Activate aftercare</td>
-                    <td><input id="aftercare_active" name="aftercare_active" type="checkbox"></td>
+                    <td><input id="aftercare_active" type="checkbox"></td>
                 </tr>
                 <tr>
                     <td>User name for device login</td>
-                    <td><input id="aftercare_login_username" name="aftercare_login_username" type="text" size=45></td>
+                    <td><input id="aftercare_login_username" type="text" size=45></td>
                 </tr>
                 <tr>
                     <td>Password for device login</td>
-                    <td><input id="aftercare_login_password" name="aftercare_login_password" type="text" size=45></td>
+                    <td><input id="aftercare_login_password" type="text" size=45></td>
                 </tr>
                 <tr>
                     <td>Name for log file</td>
-                    <td><input id="aftercare_logfile" name="aftercare_logfile" type="text" size=45</td>
+                    <td><input id="aftercare_logfile" type="text" size=45</td>
                 </tr>
                 <tr>
                     <td>Name for CSV file</td>
-                    <td><input id="aftercare_csvfile" name="aftercare_csvfile" type="text" size=45</td>
+                    <td><input id="aftercare_csvfile" type="text" size=45</td>
                 </tr>
                 <tr>
                     <td>CSV delimiter character</td>
-                    <td><input id="aftercare_csv_delimiter" name="aftercare_csv_delimiter" value=";" type="text" size=1</td>
+                    <td><input id="aftercare_csv_delimiter" value=";" type="text" size=1</td>
                 </tr>
             </table>
-            <br>
             <table id="aftercare_table"></table>
         </div>
     </div>
 
-    <div class="box box_save">
-        <h3>Save settings</h3>
-        <input id="store_settings" onclick="store_settings()" name="store_settings" type="button" value="Save" disabled>
+    <div class="box box_kickstarter_settings">
+        <h3><input id="pic_toggle_kickstarter_login" type="image" src="pics/down.png" width="15px"
+                   onclick="toggle_box_content('kickstarter_login', 'toggle')"> Login for this Kickstarter site</h3>
+        <div id="content_kickstarter_login" style="display: none;">
+            <table>
+                <tr>
+                    <td>Activate login protectionUser name</td>
+                    <td><input id="kickstarter_login_active" type="checkbox"></td>
+                </tr>
+                <tr>
+                    <td>User name</td>
+                    <td><input id="kickstarter_username" type="text" size=45></td>
+                </tr>
+                <tr>
+                    <td>Password</td>
+                    <td><input id="kickstarter_password" type="password" required autocomplete="off" spellcheck="false" size=45>
+                        <input type="image" id="show_password" src="pics/eye.png" width="15px">
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="box box_kickstarter_settings">
+        <h3><input id="pic_toggle_kickstarter_network" type="image" src="pics/down.png" width="15px"
+                   onclick="toggle_box_content('kickstarter_network', 'toggle')"> Network settings</h3>
+        <div id="content_kickstarter_network" style="display: none;">
+            <table>
+                <tr>
+                    <td>Interface</td>
+                    <td><input type="radio" value="eth0" name="kickstarter_interface" id="kickstarter_interface_eth0">eth0</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td><input type="radio" value="eth1" name="kickstarter_interface" id="kickstarter_interface_eth1">eth1</td>
+                </tr>
+                <tr>
+                    <td>IPv6 prefix</td>
+                    <td><input type="text" id="kickstarter_prefix" size=21>/64</td>
+                </tr>
+                <tr>
+                    <td>Ignore these IPv6 addresses</td>
+                    <td><input type="text" id="kickstarter_ignore_ips" size=50></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="box box_device_save">
+        <h3>Save device settings</h3>
+        <input id="store_device_settings" onclick="store_device_settings()" type="button" value="Save" disabled>
+    </div>
+
+    <div class="box box_kickstarter_save">
+        <h3>Save kickstarter settings</h3>
+        <input id="store_kickstarter_settings" onclick="store_kickstarter_settings()" type="button" value="Save" disabled>
     </div>
 
     <div class="box box_files">
         <h3>Stored files</h3>
         <table class="list_table" id="filetable"></table>
-        <br>
     </div>
 
     <div class="box box_upload">
@@ -216,38 +271,19 @@
         <label>
             <input id="dateien" onchange="filechooser(event)" name="files[]" type="file" multiple>
         </label>
-        <br>
         <p id="files_uploading"></p>
+    </div>
+
+    <div class="box box_help">
+        <p id="help_text"></p>
     </div>
 </left>
 
 <right>
-    <br>
-
     <div class="box box_status">
         <h3>Log</h3>
         <pre><code id="log_kickstarter"></code></pre>
     </div>
 </right>
-
-<helpindex>
-    <br>
-    <div class="box box_help_index">
-    <h3>Help content</h3>
-        <table class="list_table">
-            <tr><td><button class="astext" onclick="help_chapter('overview.html')">Overview</button></td></tr>
-            <tr><td><button class="astext" onclick="help_chapter('status.html')">Status</button></td></tr>
-            <tr><td><button class="astext" onclick="help_chapter('settings.html')">Settings</button></td></tr>
-            <tr><td><button class="astext" onclick="help_chapter('files.html')">Files</button></td></tr>
-        </table>
-    </div>
-</helpindex>
-
-<help>
-    <br>
-    <div class="box box_help">
-        <p id="help_text"></p>
-    </div>
-</help>
 
 </body></html>

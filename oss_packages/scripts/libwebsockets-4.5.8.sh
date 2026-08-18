@@ -1,17 +1,16 @@
 #!/bin/sh
 
 # name of directory after extracting the archive in working directory
-PKG_DIR="libwebsockets-4.3.5"
+PKG_DIR="libwebsockets-4.5.8"
 
 # name of the archive in dl directory
 PKG_ARCHIVE_FILE="${PKG_DIR}.tar.gz"
 
 # download link for the sources to be stored in dl directory
-# PKG_DOWNLOAD="https://github.com/warmcat/libwebsockets/archive/v${PKG_ARCHIVE_FILE#*-}"
-PKG_DOWNLOAD="https://m3-container.net/M3_Container/oss_packages/${PKG_ARCHIVE_FILE}"
+PKG_DOWNLOAD="https://github.com/warmcat/libwebsockets/archive/v${PKG_ARCHIVE_FILE#*-}"
 
 # md5 checksum of archive in dl directory (use "none" if empty)
-PKG_CHECKSUM="87f99ad32803ed325fceac5327aae1f5c1b417d54ee61ad36cffc8df5f5ab276"
+PKG_CHECKSUM="b6ade658f4af3a823d0dc806ae5ef0623f0f4f5e2aeb895a0f77c4783840c30e"
 
 
 
@@ -43,7 +42,7 @@ configure()
         -DLWS_WITH_HTTP2=1 \
         -DLWS_IPV6=ON \
         -DLWS_UNIX_SOCK=ON \
-        -DLWS_HAVE_LIBCAP=OFF \
+        -DLWS_WITH_LIBCAP=OFF \
         -DLWS_WITH_LEJP=ON \
         -DLWS_WITH_LEJP_CONF=ON \
         -DLWS_WITHOUT_TESTAPPS=ON \
@@ -54,7 +53,6 @@ configure()
         -DLWS_WITHOUT_TEST_PING=ON \
         -DLWS_WITHOUT_TEST_CLIENT=ON \
         -DLWS_HAVE_SSL_EXTRA_CHAIN_CERTS=ON \
-        -DLWS_HAVE_LIBCAP=OFF \
         || exit_failure "failed to configure ${PKG_DIR}"
 }
 

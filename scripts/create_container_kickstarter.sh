@@ -6,35 +6,35 @@ ROOTFS_LIST="rootfs_list_kickstarter.txt"
 
 PACKAGES_1=(
     "libxcrypt-4.5.2.sh"
-    "cacert-2026-03-19.sh"
+    "cacert-2026-08-13.sh"
     "zlib-1.3.sh"
-    "tzdb-2026a.sh"
+    "tzdb-2026c.sh"
 )
 PACKAGES_2=(
     "pcre2-10.47.sh"
-    "openssl-3.6.1.sh"
-    "libffi-3.5.2.sh"
+    "openssl-3.6.3.sh"
+    "libffi-3.8.0.sh"
     "certifi.sh"
-    "charset-normalizer-3.4.6.sh"
-    "idna-3.11.sh"
-    "requests-2.33.0.sh"
-    "urllib3-2.6.3.sh"
+    "charset-normalizer-3.5.1.sh"
+    "idna-3.18.sh"
+    "requests-2.34.2.sh"
+    "urllib3-2.7.0.sh"
     "paho.mqtt.eclipse-2.1.0.sh"
-    "python_jsonpath-2.0.2.sh"
+    "python-jsonpath-2.2.1.sh"
     "cJSON-1.7.19.sh"
-    "asyncinotify-4.4.0.sh"
-    "mqtt-5.10.0.min.js.sh"
+    "asyncinotify-4.4.4.sh"
+    "mqtt-5.15.2.min.js.sh"
 )
 PACKAGES_3=(
-    "busybox-1.36.1.sh"
-    "dropbear-2025.89.sh"
-    "metalog-20260221.sh"
-    "radvd-2.19.sh"
-    "libwebsockets-4.3.5.sh"
+    "busybox-1.38.0.sh"
+    "dropbear-2026.94.sh"
+    "metalog-20260811.sh"
+    "radvd-2.21.sh"
+    "libwebsockets-4.5.8.sh"
 )
 PACKAGES_4=(
     "mosquitto-2.1.2.sh"
-    "python-3.14.3.sh"
+    "python-3.14.7.sh"
 )
 
 PACKAGES=(

@@ -1,12 +1,13 @@
 const top_topic = "kickstarter";
 const text_disconnected = "Not online";
 const text_connected = "Online";
-var client;
-var localfiles = {};
-var fragments = [];
-var profile = {};
+let client;
+let localfiles = {};
+let fragments = [];
+let profile = {};
+let settings = {};
 
-var root = document.querySelector(':root');
+let root = document.querySelector(':root');
 
 // entry point: start MQTT web socket; the rest will be started by consuming received MQTT messages
 function start_mqtt() {
@@ -32,6 +33,8 @@ function start_mqtt() {
 
     // get config from storage
     load_store();
+
+    load_password_show_button();
 }
 
 // get config from storage
@@ -53,6 +56,21 @@ function load_store() {
     }
 }
 
+// button for changing input type for passwords
+function load_password_show_button() {
+    document.getElementById('show_password').addEventListener('click', function () {
+        const passwd = document.getElementById('kickstarter_password');
+
+        if (passwd.type == 'password' ) {
+            passwd.type = 'text';
+            passwd.setAttribute('writingsuggestions', 'false');
+        }
+        else {
+            passwd.type = 'password';
+        }
+    });
+}
+
 // Disable all logging of MQTT client
 function disable_mqtt_log () {;}
 
@@ -69,11 +87,15 @@ function on_connect() {
 
 // MQTT received message
 function on_message(topic, message) {
-    var mes = message.toString();
+    let mes = message.toString();
 
     if (topic == (top_topic + "/profile")) {
         profile = JSON.parse(mes);
         interprete_profile();
+    }
+    else if (topic == (top_topic + "/settings")) {
+        settings = JSON.parse(mes);
+        interprete_settings();
     }
     else if (topic == (top_topic + "/fw_latest")) { document.getElementById("fw_latest").innerHTML = mes; }
     else if (topic == (top_topic + "/aftercare")) { document.getElementById("aftercare_entries").innerHTML = mes; }
@@ -92,14 +114,14 @@ function on_message(topic, message) {
         let table = document.querySelector("#devicetable");
         table.innerHTML = "";
         if (devices.length > 0) {
-            device_Table(table, devices);
-            device_Table_Head(table, devices[0]);
+            device_table(table, devices);
+            device_table_head(table, devices[0]);
         }
-        var count = Object.keys(devices).length;
+        let count = Object.keys(devices).length;
         document.getElementById("detected_devices").innerHTML = "Detected devices: " + count;
     }
     else if (topic == (top_topic + "/localfiles")) {
-        for (var member in localfiles) delete localfiles[member];
+        for (let member in localfiles) delete localfiles[member];
         localfiles = JSON.parse(mes);
         display_stored_files();
         interprete_profile();
@@ -126,7 +148,7 @@ function on_message(topic, message) {
         document.getElementById("status_internet").style.color = colour;
         document.getElementById("status_internet").innerHTML = text;
     }
-    else { console.log("received from unknown topic " + topic); }
+    else { console.log("received from unknown topic \"" + topic + "\""); }
 }
 
 // MQTT closed or errored
@@ -142,22 +164,29 @@ function send_message(msg, topic) {
 
 // display/hide boxes according to chosen menu
 function view_boxes(menu) {
-    var status_display = "none";
-    var settings_display = "none";
-    var files_display = "none";
-    var help_display = "none";
-    var help_index_display = "none";
-    var upload_display = "none";
-    var save_display = "none";
+    let status_display = "none";
+    let device_settings_display = "none";
+    let kickstarter_settings_display = "none";
+    let files_display = "none";
+    let help_display = "none";
+    let help_index = "none";
+    let upload_display = "none";
+    let save_device_display = "none";
+    let save_kickstarter_display = "none";
 
     switch (menu) {
         case "status":
             status_display = "block";
             break;
 
-        case "settings":
-            settings_display = "block";
-            save_display = "block";
+        case "device_settings":
+            device_settings_display = "block";
+            save_device_display = "block";
+            break;
+
+        case "kickstarter_settings":
+            kickstarter_settings_display = "block";
+            save_kickstarter_display = "block";
             break;
 
         case "files":
@@ -166,18 +195,20 @@ function view_boxes(menu) {
             break;
 
         case "help":
-            help_index_display = "block";
+            help_index = "block";
             help_display = "block";
             break;
     }
 
     root.style.setProperty('--box_status_display', status_display);
-    root.style.setProperty('--box_settings_display', settings_display);
+    root.style.setProperty('--box_device_settings_display', device_settings_display);
+    root.style.setProperty('--box_kickstarter_settings_display', kickstarter_settings_display);
     root.style.setProperty('--box_files_display', files_display);
-    root.style.setProperty('--box_help_index_display', help_index_display);
+    root.style.setProperty('--box_help_index', help_index);
     root.style.setProperty('--box_help_display', help_display);
     root.style.setProperty('--box_upload_display', upload_display);
-    root.style.setProperty('--box_save_display', save_display);
+    root.style.setProperty('--box_save_device_display', save_device_display);
+    root.style.setProperty('--box_save_kickstarter_display', save_kickstarter_display);
 
     help_chapter("overview.html");
 }
@@ -207,7 +238,7 @@ function toggle_box_content(content_id, setting) {
 }
 
 // print head of table with detected devices
-function device_Table_Head(table, json) {
+function device_table_head(table, json) {
     let thead = table.createTHead();
     let row = thead.insertRow();
     keys = Object.keys(json);
@@ -223,12 +254,12 @@ function device_Table_Head(table, json) {
 }
 
 // print table with detected devices
-function device_Table(table, json) {
-    for (line of json) {
+function device_table(table, json) {
+    for (let line of json) {
         let row = table.insertRow();
         keys = Object.keys(line);
-        var i = 0;
-        for (key of keys) {
+        let i = 0;
+        for (let key of keys) {
             if (key == "in_progress") {
                 if (line[key]) {
                     let img = document.createElement('img');
@@ -244,9 +275,9 @@ function device_Table(table, json) {
                 }
             }
             else {
-                var text = line[key]
+                let text = line[key]
                 if (i == 3) {
-                    var a = document.createElement('a');
+                    let a = document.createElement('a');
                     a.innerHTML = '<a href="https://' + text + "/cgi_s_status" +
                                 '" target="__new_window">' + text.substring(1, text.length - 1) +
                                 '</a>';
@@ -329,7 +360,7 @@ function display_stored_files() {
             row.lastChild.title = sha256;
 
             // remove item from fragment list, because it has been stored permanently
-            var i = 0;
+            let i = 0;
             while (i < fragments.length) {
                 if (fragments[i].includes(line[keys[0]])) {
                     fragments.splice(i, 1);
@@ -343,28 +374,27 @@ function display_stored_files() {
 
         let thead = table.createTHead();
         let row = thead.insertRow();
-
-        var th = document.createElement("th");
+        let th = document.createElement("th");
         th.appendChild(document.createTextNode(""));
         row.appendChild(th);
 
-        var th = document.createElement("th");
+        th = document.createElement("th");
         th.appendChild(document.createTextNode(""));
         row.appendChild(th);
 
-        var th = document.createElement("th");
+        th = document.createElement("th");
         th.appendChild(document.createTextNode("File name"));
         row.appendChild(th);
 
-        var th = document.createElement("th");
+        th = document.createElement("th");
         th.appendChild(document.createTextNode("File size"));
         row.appendChild(th);
 
-        var th = document.createElement("th");
+        th = document.createElement("th");
         th.appendChild(document.createTextNode("Last modified"));
         row.appendChild(th);
 
-        var th = document.createElement("th");
+        th = document.createElement("th");
         th.appendChild(document.createTextNode("SHA256"));
         row.appendChild(th);
     }
@@ -372,8 +402,8 @@ function display_stored_files() {
 
 // create a selector with all CSV files
 function display_config_to_write() {
-    var select = document.getElementById("config_to_write");
-    var selected = "";
+    let select = document.getElementById("config_to_write");
+    let selected = "";
 
     // remove existing entries
     while (select.firstChild) {
@@ -382,7 +412,7 @@ function display_config_to_write() {
     selected_config = profile["config_table"]["filename"];
 
     // add "---" as none
-    var opt = document.createElement('option');
+    let opt = document.createElement('option');
     opt.innerHTML = opt.value = "---";
     if (selected_config === opt.value) {
         opt.selected = true;
@@ -392,15 +422,15 @@ function display_config_to_write() {
     // add all locally stored config files
     if (Object.keys(localfiles).length) {
         array = [];
-        for (var i of localfiles) {
+        for (let i of localfiles) {
             // only accept files ending with .csv
             if ((i["name"].substr(i["name"].length - 4, i["name"].length)) == ".csv") {
                 array.push(i["name"]);
             }
         }
         array.sort();
-        for (var i = array.length - 1; i >= 0; i--) {
-            var opt = document.createElement('option');
+        for (let i = array.length - 1; i >= 0; i--) {
+            let opt = document.createElement('option');
             opt.innerHTML = opt.value = array[i];
             if (selected_config === opt.value) {
                 opt.selected = true;
@@ -410,7 +440,7 @@ function display_config_to_write() {
         }
     }
     // add download button
-    var dl = document.getElementById("download_config");
+    let dl = document.getElementById("download_config");
     dl.hidden = true;
     if (selected.length) {
         if (selected.value != "---") {
@@ -426,7 +456,7 @@ function display_config_to_write() {
 
 // create a selector with all firmware files
 function display_firmware_to_write() {
-    var select = document.getElementById("firmware_to_write");
+    let select = document.getElementById("firmware_to_write");
 
     // remove existing entries
     while (select.firstChild) {
@@ -435,7 +465,7 @@ function display_firmware_to_write() {
     selected_firmware = profile["firmware"]["version"];
 
     // add "---" as none
-    var opt = document.createElement('option');
+    let opt = document.createElement('option');
     opt.innerHTML = opt.value = "---";
     if (selected_firmware === opt.value) {
         opt.selected = true;
@@ -443,7 +473,7 @@ function display_firmware_to_write() {
     select.appendChild(opt);
 
     // add "latest" as a firmware
-    var opt = document.createElement('option');
+    opt = document.createElement('option');
     opt.innerHTML = opt.value = "latest";
     if (selected_firmware === opt.value) {
         opt.selected = true;
@@ -453,7 +483,7 @@ function display_firmware_to_write() {
     // add all locally stored firmware files
     if (Object.keys(localfiles).length) {
         array = [];
-        for (var i of localfiles) {
+        for (let i of localfiles) {
             // only accept full autoupdate files
             if (i["name"].startsWith("autoupdate-")) {
                 if (i["name"].includes(".tar")) {
@@ -465,8 +495,8 @@ function display_firmware_to_write() {
             }
         }
         array.sort();
-        for (var i = array.length - 1; i >= 0; i--) {
-            var opt = document.createElement('option');
+        for (let i = array.length - 1; i >= 0; i--) {
+            let opt = document.createElement('option');
             opt.innerHTML = opt.value = array[i];
             if (selected_firmware === opt.value) {
                 opt.selected = true;
@@ -478,8 +508,8 @@ function display_firmware_to_write() {
 
 // paint a table with all files except firmware files
 function change_file_to_write(id, selected_filename) {
-    var select = document.getElementById(id);
-    var found_selected = false;
+    let select = document.getElementById(id);
+    let found_selected = false;
 
     // remove existing entries
     if (select) {
@@ -491,14 +521,14 @@ function change_file_to_write(id, selected_filename) {
     // add all locally stored files except firmware
     if (localfiles) {
         array = [];
-        for (var i of localfiles) {
+        for (let i of localfiles) {
             if (!i["name"].startsWith("autoupdate-")) {
                 array.push(i["name"]);
             }
         }
         array.sort();
-        for (var i = array.length - 1; i >= 0; i--) {
-            var opt = document.createElement('option');
+        for (let i = array.length - 1; i >= 0; i--) {
+            let opt = document.createElement('option');
             opt.innerHTML = opt.value = array[i];
             if (selected_filename === opt.value) {
                 opt.selected = true;
@@ -509,7 +539,7 @@ function change_file_to_write(id, selected_filename) {
     }
 
     // add an empty one
-    var opt = document.createElement('option');
+    let opt = document.createElement('option');
     opt.innerHTML = opt.value = "";
     if (!found_selected) {
         opt.selected = true;
@@ -517,7 +547,7 @@ function change_file_to_write(id, selected_filename) {
     select.appendChild(opt);
 }
 
-// read in a received profile and store it in global variables
+// interprete a received profile and store it in global variables
 function interprete_profile() {
     // do nothing if there is not yet known any profile
     if (!Object.hasOwn(profile, 'firmware')) {
@@ -549,24 +579,47 @@ function interprete_profile() {
     document.getElementById('aftercare_csv_delimiter').value  = profile["aftercare"]["csv_delimiter"];
 }
 
+// interprete received settings and store it in global variables
+function interprete_settings() {
+    // do nothing if there is not yet known any profile
+    if (!Object.hasOwn(settings, 'dirs')) {
+        return;
+    };;
+
+    document.getElementById('kickstarter_login_active').checked = settings["login"]["active"];
+    document.getElementById('kickstarter_username').value       = settings["login"]["username"];
+    document.getElementById('kickstarter_password').value       = settings["login"]["password"];
+    document.getElementById('kickstarter_prefix').value         = settings["net"]["prefix"];
+    document.getElementById('kickstarter_ignore_ips').value     = settings["net"]["ignore_ips"];
+
+    if (settings["net"]["interface"] === "eth1") {
+        document.getElementById('kickstarter_interface_eth0').checked = false;
+        document.getElementById('kickstarter_interface_eth1').checked = true;
+    }
+    else {
+        document.getElementById('kickstarter_interface_eth0').checked = true;
+        document.getElementById('kickstarter_interface_eth1').checked = false;
+    }
+}
+
 // create "browse" and upload button
 function filechooser(event) {
-    var files = event.target.files;
+    let files = event.target.files;
 
-    for (var i = 0, f; f = files[i]; i++) {
+    for (let i = 0, f; f = files[i]; i++) {
         // ignore huge files
         if (f.size > 40 * 1024 * 1024) {
             fragments.push('File too large, ignoring it: <strong>', f.name, '</strong> ', f.size, ' bytes', '<br>');
             continue;
         }
-        var pic = '&nbsp;&nbsp;<img src="pics/spinner.gif" width=15px>'
+        let pic = '&nbsp;&nbsp;<img src="pics/spinner.gif" width=15px>'
         fragments.push('<strong>' + f.name + '</strong> ' + f.size + ' bytes' + pic + '<br>');
 
         // send file via MQTT after it has been selected
-        var reader = new FileReader();
+        let reader = new FileReader();
         reader.onloadend = (function(theFile) {
             return function(e) {
-                var uploading = new Object();
+                let uploading = new Object();
                 uploading.name = theFile.name;
                 uploading.type = theFile.type;
                 uploading.size = theFile.size;
@@ -584,61 +637,78 @@ function filechooser(event) {
 
 // en-/disable elements, so user can/can't use them
 function enable_elements(yesno) {
-    var elements = [
-        "store_settings"
+    let elements = [
+        "store_device_settings",
+        "store_kickstarter_settings"
     ];
 
-    for (var i of elements) {
+    for (let i of elements) {
         document.getElementById(i).disabled = !yesno;
     }
 }
 
+// send MQTT message with settings for kickstarter to store
+function store_kickstarter_settings() {
+    settings["login"]["active"]   = document.getElementById('kickstarter_login_active').checked;
+    settings["login"]["username"] = document.getElementById('kickstarter_username').value;
+    settings["login"]["password"] = document.getElementById('kickstarter_password').value;
+    settings["net"]["interface"]  = document.querySelector('input[name="kickstarter_interface"]:checked').value;
+    settings["net"]["prefix"]     = document.getElementById('kickstarter_prefix').value;
+    settings["net"]["ignore_ips"] = document.getElementById('kickstarter_ignore_ips').value;
+
+    send_message(JSON.stringify(settings), top_topic + "/settings_up");
+
+    // scroll to the top to signal, that storing happened
+    window.scrollTo(0, 0);
+}
+
 // send MQTT message with profile to store
-function store_settings() {
+function store_device_settings() {
     profile["initial_login"]["username"] = document.getElementById('initial_login_username').value;
     profile["initial_login"]["password"] = document.getElementById('initial_login_password').value;
 
-    profile["firmware"]["version"]      = document.getElementById('firmware_to_write').value;
-    profile["config_table"]["filename"] = document.getElementById('config_to_write').value;
+    profile["firmware"]["version"] = document.getElementById('firmware_to_write').value;
 
-    profile["auto-update"]["active"]         = document.getElementById('check_active').checked;
-    profile["auto-update"]["uri"]            = document.getElementById('check_uri').value;
+    profile["config_table"]["filename"] = document.getElementById('config_to_write').value;
+    profile["auto-update"]["active"] = document.getElementById('check_active').checked;
+    profile["auto-update"]["uri"] = document.getElementById('check_uri').value;
     profile["auto-update"]["check_interval"] = document.getElementById('check_interval').value;
 
-    profile["irm"]["active"]  = document.getElementById('irm_active').checked
-    profile["irm"]["uri"]     = document.getElementById('irm_uri').value
-    profile["irm"]["token"]   = document.getElementById('irm_token').value
-    profile["irm"]["group"]   = document.getElementById('irm_group').value
+    profile["irm"]["active"]  = document.getElementById('irm_active').checked;
+    profile["irm"]["uri"] = document.getElementById('irm_uri').value;
+    profile["irm"]["token"] = document.getElementById('irm_token').value;
+    profile["irm"]["group"] = document.getElementById('irm_group').value;
 
     // get all the files that should be uploaded to the device
-    var uploads = [];
-    var table = document.getElementById("upload_table");
-    var rows = table.querySelectorAll("tr");
+    let uploads = [];
+    let table = document.getElementById("upload_table");
+    let rows = table.querySelectorAll("tr");
     rows.forEach(function(row) {
         if (row.id.startsWith("del_table_entry_id_")) {
-            var sel = row.cells[0].firstChild;
-            var activate = row.cells[1].firstChild;
+            let sel = row.cells[0].firstChild;
+            let activate = row.cells[1].firstChild;
             uploads.push( { "filename": sel[sel.selectedIndex].text, "activate": activate.checked } );
         }
     });
     profile["uploads"] = uploads;
 
     // get all requests that should be sent in aftercare phase
-    profile["aftercare"]["active"]            = document.getElementById('aftercare_active').checked
-    profile["aftercare"]["login"]["username"] = document.getElementById('aftercare_login_username').value
-    profile["aftercare"]["login"]["password"] = document.getElementById('aftercare_login_password').value
-    profile["aftercare"]["logfile"]           = document.getElementById('aftercare_logfile').value
-    profile["aftercare"]["csvfile"]           = document.getElementById('aftercare_csvfile').value
-    profile["aftercare"]["csv_delimiter"]     = document.getElementById('aftercare_csv_delimiter').value
-    var requests = [];
-    var table = document.getElementById("aftercare_table");
-    var rows = table.querySelectorAll("tr");
+    profile["aftercare"]["active"] = document.getElementById('aftercare_active').checked;
+    profile["aftercare"]["login"]["username"] = document.getElementById('aftercare_login_username').value;
+    profile["aftercare"]["login"]["password"] = document.getElementById('aftercare_login_password').value;
+    profile["aftercare"]["logfile"] = document.getElementById('aftercare_logfile').value;
+    profile["aftercare"]["csvfile"] = document.getElementById('aftercare_csvfile').value;
+    profile["aftercare"]["csv_delimiter"] = document.getElementById('aftercare_csv_delimiter').value;
+
+    let requests = [];
+    table = document.getElementById("aftercare_table");
+    rows = table.querySelectorAll("tr");
     rows.forEach(function(row) {
         if (row.id.startsWith("del_aftercare_id_")) {
-            var inner_table = row.cells[1].firstChild;
-            var inner_rows = inner_table.querySelectorAll("tr");
+            let inner_table = row.cells[1].firstChild;
+            let inner_rows = inner_table.querySelectorAll("tr");
 
-            var request = {};
+            let request = {};
             if (inner_rows[0].cells[1].firstChild.value) { request["name"]     = inner_rows[0].cells[1].firstChild.value; }
             if (inner_rows[1].cells[1].firstChild.value) { request["request"]  = inner_rows[1].cells[1].firstChild.value; }
             if (inner_rows[2].cells[1].firstChild.value) { request["jsonpath"] = inner_rows[2].cells[1].firstChild.value; }
@@ -669,19 +739,19 @@ function display_upload() {
     let thead = table.createTHead();
     let row = thead.insertRow();
 
-    var th = document.createElement("th");
+    let th = document.createElement("th");
     th.appendChild(document.createTextNode("File name"));
     th.style = "text-align: left";
     row.appendChild(th);
 
-    var th = document.createElement("th");
+    th = document.createElement("th");
     th.appendChild(document.createTextNode("apply ASCII"));
     row.appendChild(th);
 
     // paint all existing upload files
     if (Object.keys(localfiles).length) {
-        var i = 1;
-        for (entry of profile["uploads"]) {
+        let i = 1;
+        for (let entry of profile["uploads"]) {
             add_upload(entry, i, false);
             i++;
         }
@@ -692,7 +762,7 @@ function display_upload() {
 
 // add a table row containing a file, that should be uploaded to the device
 function add_upload(entry, i, paint_add) {
-    var table = document.getElementById("upload_table");
+    let table = document.getElementById("upload_table");
 
     // only insert a single new entry
     if (paint_add) {
@@ -761,7 +831,7 @@ function display_aftercare_requests() {
     let thead = table.createTHead();
     let row = thead.insertRow();
 
-    var th = document.createElement("th");
+    let th = document.createElement("th");
     th.appendChild(document.createTextNode("Aftercare requests"));
     th.style = "text-align: left";
     th.colSpan = 2;
@@ -769,8 +839,8 @@ function display_aftercare_requests() {
 
     // paint all existing requests
     if (Object.keys(localfiles).length) {
-        var i = 1;
-        for (entry of profile["aftercare"]["requests"]) {
+        let i = 1;
+        for (let entry of profile["aftercare"]["requests"]) {
             add_aftercare_request(entry, i, false);
             i++;
         }
@@ -781,7 +851,7 @@ function display_aftercare_requests() {
 
 // add a table row containing a new request, that should be sent in aftercare phase
 function add_aftercare_request(entry, i, paint_add) {
-    var table = document.getElementById("aftercare_table");
+    let table = document.getElementById("aftercare_table");
 
     // only insert a single new entry
     if (paint_add) {
@@ -796,7 +866,7 @@ function add_aftercare_request(entry, i, paint_add) {
 
     // paint number of request
     let empty = document.createTextNode("Request " + i);
-    var cell = row.insertCell(0);
+    let cell = row.insertCell(0);
     cell.style = "vertical-align: middle";
     cell.appendChild(empty);
     row.appendChild(cell);
@@ -810,7 +880,7 @@ function add_aftercare_request(entry, i, paint_add) {
     del.className = "input_image";
     del.src = "pics/trash.png";
     del.addEventListener('click', del_table_entry_id.bind(null, row.id));
-    var cell = row.insertCell(0);
+    cell = row.insertCell(0);
     cell.style = "vertical-align: middle";
     cell.appendChild(del);
     row.appendChild(cell);
@@ -827,9 +897,9 @@ function add_aftercare_request_element(rand_id, entry) {
     let cellsize = 35;
 
     // name of request
-    var tabrow = tab.insertRow();
+    let tabrow = tab.insertRow();
     tabrow.insertCell().appendChild(document.createTextNode("CSV column name"));
-    var cell = document.createElement("input");
+    let cell = document.createElement("input");
     cell.type = "text";
     cell.size = cellsize;
     if (entry["name"]) { cell.value = entry["name"]; }
@@ -838,9 +908,9 @@ function add_aftercare_request_element(rand_id, entry) {
     tabrow.insertCell().appendChild(cell);
 
     // URI of request
-    var tabrow = tab.insertRow();
+    tabrow = tab.insertRow();
     tabrow.insertCell().appendChild(document.createTextNode("Request URI"));
-    var cell = document.createElement("input");
+    cell = document.createElement("input");
     cell.type = "text";
     cell.size = cellsize;
     if (entry["request"]) { cell.value = entry["request"]; }
@@ -849,9 +919,9 @@ function add_aftercare_request_element(rand_id, entry) {
     tabrow.insertCell().appendChild(cell);
 
     // jsonpath of request
-    var tabrow = tab.insertRow();
+    tabrow = tab.insertRow();
     tabrow.insertCell().appendChild(document.createTextNode("JSONPATH to data"));
-    var cell = document.createElement("input");
+    cell = document.createElement("input");
     cell.type = "text";
     cell.size = cellsize;
     if (entry["jsonpath"]) { cell.value = entry["jsonpath"]; }
@@ -860,9 +930,9 @@ function add_aftercare_request_element(rand_id, entry) {
     tabrow.insertCell().appendChild(cell);
 
     // expected of request
-    var tabrow = tab.insertRow();
+    tabrow = tab.insertRow();
     tabrow.insertCell().appendChild(document.createTextNode("Expected result of request"));
-    var cell = document.createElement("input");
+    cell = document.createElement("input");
     cell.type = "text";
     cell.size = cellsize;
     if (entry["expected"]) { cell.value = entry["expected"]; }
@@ -875,7 +945,7 @@ function add_aftercare_request_element(rand_id, entry) {
 
 // add a table row with only a plus button for new entries
 function add_plus(table, i, id_text) {
-    var row = table.insertRow();
+    let row = table.insertRow();
     row.insertCell().appendChild(document.createTextNode(""));
     row.insertCell().appendChild(document.createTextNode(""));
 
@@ -898,7 +968,7 @@ function add_plus(table, i, id_text) {
 
 // delete an entry in a endless table
 function del_table_entry_id(id) {
-    var row = document.getElementById(id);
+    let row = document.getElementById(id);
     row.parentNode.removeChild(row);
 }
 
@@ -910,7 +980,7 @@ function delete_file(filename) {
 
 // create an aritificial link for downloading a file
 function download_file(filename) {
-    var link = document.createElement('a');
+    let link = document.createElement('a');
     link.href = 'files/' + filename;
     link.download = filename;
     document.body.appendChild(link);

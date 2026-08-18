@@ -1,44 +1,44 @@
+from enum import StrEnum
+
 import logging
 import json
 import paho.mqtt.client as mqtt
-from enum import StrEnum
 
-class TopicType(StrEnum):
-    def fullpath(self):
-        return 'kickstarter/' + self.value
-
-class Topics(TopicType):
-    STATUS          = 'status'
-    LOG             = 'log'
-    DEVICES         = 'devices'
-    FW_LATEST       = 'fw_latest'
-    PROFILE         = 'profile'
-    PROFILE_UP      = 'profile_up'
-    UPLOAD          = 'upload'
-    LOCALFILES      = 'localfiles'
-    DELETE_FILE     = 'delete_file'
-    ALERT           = 'alert'
-    AFTERCARE       = 'aftercare'
-    AFTERCARE_RESET = 'aftercare_reset'
-    INTERNET        = 'internet'
+class Topics(StrEnum):
+    TOP             = 'kickstarter'
+    STATUS          = f'{TOP}/status'
+    LOG             = f'{TOP}/log'
+    DEVICES         = f'{TOP}/devices'
+    FW_LATEST       = f'{TOP}/fw_latest'
+    PROFILE         = f'{TOP}/profile'
+    PROFILE_UP      = f'{TOP}/profile_up'
+    SETTINGS        = f'{TOP}/settings'
+    SETTINGS_UP     = f'{TOP}/settings_up'
+    UPLOAD          = f'{TOP}/upload'
+    LOCALFILES      = f'{TOP}/localfiles'
+    DELETE_FILE     = f'{TOP}/delete_file'
+    ALERT           = f'{TOP}/alert'
+    AFTERCARE       = f'{TOP}/aftercare'
+    AFTERCARE_RESET = f'{TOP}/aftercare_reset'
+    INTERNET        = f'{TOP}/internet'
 
 class Mqtt(logging.Handler):
-    def __init__(self, logger, queue, profile):
+    def __init__(self, logger, queue, settings):
         self.__logger = logger
         self.__init_logger()
         self.__logger.info('Starting MQTT client')
 
         self.__queue = queue
-        self.__logfile = profile["dirs"]["log"]
+        self.__logfile = settings["dirs"]["log"]
 
         self.__client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
         self.__client.on_connect = self.on_connect
         self.__client.on_message = self.on_message
         #self.__client.tls_set(profile["mqtt"]["ca"], profile["mqtt"]["cert"], profile["mqtt"]["key"])
         #self.__client.user_data_set(profile)
-        self.__client.will_set(Topics.STATUS.fullpath(), "offline", retain=True)
-        self.__client.connect_async(host=profile["mqtt"]["url"],
-                                    port=int(profile["mqtt"]["port"]),
+        self.__client.will_set(Topics.STATUS, "offline", retain=True)
+        self.__client.connect_async(host=settings["mqtt"]["url"],
+                                    port=int(settings["mqtt"]["port"]),
                                     keepalive=60,
                                     bind_address="")
         self.__client.loop_start()
@@ -55,10 +55,11 @@ class Mqtt(logging.Handler):
         self.__logger.info("Started MQTT connection")
 
         self.__queue.put({ "connect": "" })
-        client.subscribe(Topics.UPLOAD.fullpath())
-        client.subscribe(Topics.PROFILE_UP.fullpath())
-        client.subscribe(Topics.DELETE_FILE.fullpath())
-        client.subscribe(Topics.AFTERCARE_RESET.fullpath())
+        client.subscribe(Topics.UPLOAD)
+        client.subscribe(Topics.PROFILE_UP)
+        client.subscribe(Topics.SETTINGS_UP)
+        client.subscribe(Topics.DELETE_FILE)
+        client.subscribe(Topics.AFTERCARE_RESET)
 
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, msg):
@@ -69,43 +70,28 @@ class Mqtt(logging.Handler):
         self.__client.loop_stop()
 
     def msg_last_log_entries(self):
-        with open(self.__logfile, "r", encoding='utf-8') as file:
-            text = ""
-            logs = file.readlines()
-            for line in logs[-25:]:
-                if '[' not in line:
-                    continue
-                # cut out the program name from log, as this is nothing new
-                l = line.rstrip()
-                a = l.split(' [', 1)
-                b = l.split(']', 1)
-                text = text + f'{a[0]}{b[1]}' + '\n'
-            self.__client.publish(Topics.LOG.fullpath(), text, retain=True)
+        try:
+            with open(self.__logfile, "r", encoding='utf-8') as file:
+                text = ""
+                logs = file.readlines()
+                for line in logs[-25:]:
+                    if '[' not in line:
+                        continue
+                    # cut out the program name from log, as this is nothing new
+                    l = line.rstrip()
+                    a = l.split(' [', 1)
+                    b = l.split(']', 1)
+                    text = text + f'{a[0]}{b[1]}' + '\n'
+                self.__client.publish(Topics.LOG, text, retain=True)
+        except:
+            pass
 
-    def msg_status_online(self):
-        return self.__client.publish(Topics.STATUS.fullpath(), payload="online", retain=True)
-
-    def msg_latest_firmware(self, firmware_version):
-        return self.__client.publish(Topics.FW_LATEST.fullpath(), payload=firmware_version, retain=True)
-
-    def msg_existing_devices(self, existing_devices):
-        return self.__client.publish(Topics.DEVICES.fullpath(), payload=existing_devices, retain=True)
-
-    def msg_profile(self, userdata):
-        return self.__client.publish(Topics.PROFILE.fullpath(), payload=json.dumps(userdata), retain=True)
-
-    def msg_internet(self, internet):
-        return self.__client.publish(Topics.INTERNET.fullpath(), payload=internet, retain=True)
-
-    def msg_local_files(self, local_files):
-        return self.__client.publish(Topics.LOCALFILES.fullpath(), payload=json.dumps(local_files), retain=True)
-
-    def msg_aftercare_devices(self, aftercare_devices):
-        return self.__client.publish(Topics.AFTERCARE.fullpath(), payload=aftercare_devices, retain=True)
-
-    def msg_alert(self, text):
-        return self.__client.publish(Topics.ALERT.fullpath(), payload=text, retain=False)
+    def publish(self, topic, payload, plain=False, retain=False):
+        """ send message via MQTT """
+        if plain is False:
+            payload = json.dumps(payload)
+        self.__client.publish(topic, payload=payload, retain=retain)
 
     def emit(self, record):
-        self.__client.publish(Topics.LOG.fullpath(), self.format(record), retain=True)
+        self.__client.publish(Topics.LOG, self.format(record), retain=True)
         return None

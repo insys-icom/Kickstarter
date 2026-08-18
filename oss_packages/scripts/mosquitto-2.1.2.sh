@@ -26,7 +26,8 @@ PKG_INSTALL_DIR="${PKG_BUILD_DIR}/install"
 
 configure()
 {
-    true
+    # disable building plugins, we don't have sqlite
+    sed -i 's|DIRS=libcommon lib apps client plugins src|DIRS=libcommon lib apps client src|' "${PKG_BUILD_DIR}/Makefile"
 }
 
 compile()
@@ -35,7 +36,6 @@ compile()
     cd "${PKG_BUILD_DIR}"
     CC="${M3_CROSS_COMPILE}gcc" \
         CXX=$CC \
-        CROSS_COMPILE="" \
         CFLAGS="${M3_CFLAGS} -I${STAGING_INCLUDE}" \
         CPPFLAGS="${M3_CFLAGS} -I${STAGING_INCLUDE}" \
         LDFLAGS="${M3_LDFLAGS} -L${STAGING_LIB} -lcrypto -lssl" \
@@ -43,11 +43,11 @@ compile()
             "${M3_MAKEFLAGS}" \
             WITH_UUID=no \
             WITH_EC=yes \
-            WITH_DOCS:=no \
-            WITH_EDITLINE:=no \
-            WITH_WEBSOCKETS:=yes \
-            WITH_HTTP_API:=no \
-            WITH_SQLITE:=no \
+            WITH_DOCS=no \
+            WITH_EDITLINE=no \
+            WITH_WEBSOCKETS=yes \
+            WITH_HTTP_API=no \
+            WITH_SQLITE=no \
             DESTDIR="${PKG_INSTALL_DIR}" install \
             || exit_failure "failed to install ${PKG_DIR} to ${PKG_INSTALL_DIR}"
 }
@@ -55,8 +55,22 @@ compile()
 install_staging()
 {
     cd "${PKG_BUILD_DIR}"
-    make DESTDIR="${PKG_INSTALL_DIR}" install || exit_failure "failed to install ${PKG_DIR}"
-    make DESTDIR="${STAGING_DIR}" install || exit_failure "failed to install ${PKG_DIR}"
+    CC="${M3_CROSS_COMPILE}gcc" \
+        CXX=$CC \
+        CFLAGS="${M3_CFLAGS} -I${STAGING_INCLUDE}" \
+        CPPFLAGS="${M3_CFLAGS} -I${STAGING_INCLUDE}" \
+        LDFLAGS="${M3_LDFLAGS} -L${STAGING_LIB} -lcrypto -lssl" \
+        make \
+            "${M3_MAKEFLAGS}" \
+            WITH_UUID=no \
+            WITH_EC=yes \
+            WITH_DOCS=no \
+            WITH_EDITLINE=no \
+            WITH_WEBSOCKETS=yes \
+            WITH_HTTP_API=no \
+            WITH_SQLITE=no \
+            DESTDIR="${STAGING_DIR}" install \
+            || exit_failure "failed to install ${PKG_DIR}"
 }
 
 . ${HELPERSDIR}/call_functions.sh

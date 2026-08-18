@@ -1,15 +1,15 @@
-<h2>Settings</h2>
+<h2>Device settings</h2>
 
-<p>All modifications to the settings only get permanently stored, when the <b>&quot;Save&quot;</b> button is used!</p>
+<p>These settings define, what happens with detected INSYS devices.</p>
 
-<h5>Setting the time</h5>
+<h4>Setting the time</h4>
 <p>After a new detected router can get accessed, the time of the router will get set to the time, that is set on the router with the Kickstarter container.</p>
 
-<h5>Initial login</h5>
+<h4>Initial login</h4>
 <p>Setting the initial login credentials are not necessary when the devices are in default settings. If the devices are not in default settings, these credentials are used.
    If login with no credentials or the credentials given here are both failing, the credentials from the aftercare phase (see below) will be used.</p>
 
-<h5>Uploading Firmware</h5>
+<h4>Uploading Firmware</h4>
 <p>All detected routers will get optionally updated to the configured firmware.
     Updating the firmware is disabled by selcting &quot;---&quot;.
     The firmware must be available on the container as an autoupdate full image (autoupdate-x.y-full.tar).</p>
@@ -18,13 +18,13 @@
     For that the URI for the firmware check must point to an Auto-Update server, that offers a list.txt file with the new firmware.
     The new firmware can automatically get used as the &quot;latest&quot; firmware availlable to flash.</p>
 
-<h5>Updating more (e.g. containers, profiles, licenses)</h5>
+<h4>Updating more (e.g. containers, profiles, licenses)</h4>
 <p>More uploads can be configured here, that will be uploaded to the detected device.
     Update packets will get uploaded and processed, as the MANIFEST of the update packet defines.
     Pure ASCII files also can get uploaded and stored in &quot;Profiles&quot;
     Optionally they can get activated immediatelly after uploading them, so the running profile gets modified.</p>
 
-<h5>Upload and apply CSV config table</h5>
+<h4>Upload and apply CSV config table</h4>
 <p>Optionally a CSV (Comma Separated Values) file can be used.
     It can be used to execute CLI commands with arguments, that depend on the serial number of the device.
     <table border="1">
@@ -35,7 +35,6 @@
         <tr><td>CLI command 4</td><td></td>           <td>Argument A</td> <td>Argument B</td> <td>Argument C</td> <td></td>      </tr>
         <tr><td>CLI command 5</td><td></td>           <td>Argument a</td> <td>Argument b</td> <td>Argument c</td> <td></td>      </tr>
         <tr><td>CLI command 6</td><td>Argument Z</td> <td></td>           <td></td>           <td></td>           <td></td>      </tr>
-
     </table>
 </p>
 
@@ -63,7 +62,7 @@
 <p>Often the last CLI command would be the text to activate the modified profile: &quot;administration.profiles.activate&quot;</p>
 </ul>
 
-<h5>Register device at iRM (icom Router Management)</h5>
+<h4>Register device at iRM (icom Router Management)</h4>
 <p>Optionally every device can be registered at iRM.
     In that case the created ConnectionProfile in iRM will be downloaded and uploaded to the device.</p>
 
@@ -79,7 +78,7 @@ curl -k -X 'POST' 'https://192.168.1.1/api/v2_0/auth/login' \
     -d '{ "username": "insys", "password": "icom" }'
 </pre>
 
-<h5>Aftercare: HTTP(S) requests to the finished devices</h5>
+<h4>Aftercare: HTTP(S) requests to the finished devices</h4>
 <p>After a device ran through all the phases described above the optional aftercare phase will query information from the deivces.
 This info gets stored in a file, so the user has documentation about the processed devices.</p>
 

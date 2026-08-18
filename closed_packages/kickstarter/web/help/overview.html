@@ -21,24 +21,21 @@
     This is necessary to find out the hosts IP address and avoid kickstarting the host.</p>
 
 <p>The column &quot;action&quot; will display the current kickstarting action in process.
-    In case the &quot;action&quot; is &quot;---&quot; the kickstaring has been finished.</p>
+    In case the &quot;action&quot; is &quot;---&quot; the kickstaring process is complete.</p>
 
 <p>Devices with an &quot;INFO LED&quot; will also display the progress of the kickstarting process</p>
 <ul>
     <li>INFO LED <b>blinking</b>: a new detected devices has been detected, kickstarting started</li>
     <li>INFO LED <b>on</b>: kickstarting process has finishied</li>
-    <li>INFO LED <b>off</b>: kickstarting was not completelly successful</li>
+    <li>INFO LED <b>off</b>: kickstarting process was not completelly successful</li>
 </ul>
 
 <p>The log file will show the last lines of the current log.
     The full log is available as file after logging into the container in the file &quot;/data/log/kickstarter/current&quot;.
-    The log file will be rotated and archived after its size reached 1 MByte.</p>
+    The log file will be rotated and archived after its size reached 1 MByte or the age of 30 days.</p>
 
 <h4>SSH</h4>
-<p>There exist two users:</p>
-<ul>
-    <li>User name &quot;root&quot; / password &quot;root&quot;</li>
-    <li>User name &quot;user&quot; / password &quot;user&quot;: this user runs the kickstarter application</li>
-</ul>
+<p>There is an SSH server with the user <b>&quot;root&quot;</b> and password <b>&quot;root&quot;</b>.
+The password can be changed in &quot;Kickstart settings&quot;</p>
 
 <p>It is highly recommended to change passwords and install ssh keys in ~/.ssh/authorized_keys</p>
