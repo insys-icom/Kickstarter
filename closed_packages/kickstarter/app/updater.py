@@ -156,9 +156,12 @@ class Updater(Thread):
 
         # upload firmware
         self.__message['action'] = 'Uploading firmware'
-        filename = f"autoupdate-{self.__firmware}-full.tar"
-        if self.__message['board'] == "M4CPU":
-            filename = f"autoupdate-{self.__firmware}-full.arm64.tar"
+        if float(self.__firmware) < 10:
+            filename = f"autoupdate-{self.__firmware}-full.tar"
+        else:
+            filename = f"autoupdate-{self.__firmware}-full.arm32.tar"
+            if self.__message['board'] == "M4CPU":
+                filename = f"autoupdate-{self.__firmware}-full.arm64.tar"
         response = self.__upload_file(filename, self.__dir_files, filetype="firmware")
         if response is False:
             self.__message['action'] = 'Failed to upload firmware'
