@@ -595,10 +595,14 @@ class Updater(Thread):
 
         # walk over entries of response
         if response and response.json():
-            for x in response.json()['content']:
-                if x["result"] != "done":
-                    self.__logger.info(f'{self.__serialnumber}: Storing uploaded file failed: {x["error"]}')
-                    return False
+            if 'content' in response.json():
+                for x in response.json()['content']:
+                    if x["result"] != "done":
+                        self.__logger.info(f'{self.__serialnumber}: Storing uploaded file failed: {x["error"]}')
+                        return False
+            else:
+                self.__logger.info(f'{self.__serialnumber}: Storing uploaded file failed, no content in answer')
+                return False
 
         return True
 
