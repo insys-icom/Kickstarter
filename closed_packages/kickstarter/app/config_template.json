@@ -23,6 +23,18 @@
             "hashes":    "/data/kickstarter/hashes",
             "irm":       "/data/kickstarter/irm",
             "ics":       "/data/kickstarter/ics"
+        },
+
+        "auto-update": {
+            "active": false,
+            "uri": "https://autoupdate.insys-tec.net/m3/list_files/bleeding_full.txt",
+            "check_interval": "24"
+        },
+
+        "irm": {
+            "uri": "https://api.insys-tec.net/api",
+            "token": "",
+            "group": "Fresh devices"
         }
     },
 
@@ -30,12 +42,6 @@
         "initial_login": {
             "username": "",
             "password": ""
-        },
-
-        "auto-update": {
-            "active": false,
-            "uri": "https://autoupdate.insys-tec.net/m3/list_files/bleeding_full.txt",
-            "check_interval": "24"
         },
 
         "firmware": {
@@ -50,15 +56,7 @@
         },
 
         "irm": {
-            "active": false,
-            "uri": "https://api.insys-tec.net/api",
-            "token": "",
-            "group": "Fresh devices"
-        },
-
-        "ics": {
-            "active": false,
-            "uri": ""
+            "active": false
         },
 
         "aftercare": {
@@ -87,6 +85,6 @@
                     "jsonpath": "status.list[0].board_type"
                 }
             ]
-		}
+        }
     }
 }

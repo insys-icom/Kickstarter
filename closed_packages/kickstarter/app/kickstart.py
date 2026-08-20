@@ -73,7 +73,7 @@ class Kickstart():
         self.__file.radvd_config(self.__settings['net']['interface'], self.__settings['net']['prefix'])
 
         # start Downloader to get most recent firmware update
-        self.__downloader = Downloader(self.__logger, self.__event_shutdown, self.__queue_downloader, self.__profile, self.__settings)
+        self.__downloader = Downloader(self.__logger, self.__event_shutdown, self.__queue_downloader, self.__settings)
         self.__downloader.start()
 
         # read all locally stored files
@@ -288,9 +288,6 @@ class Kickstart():
                 # send the current firmware version
                 self.__mqtt.publish(Topics.FW_LATEST, self.__fw_version, plain=True, retain=True)
 
-                # reconfigure downloader thread
-                self.__downloader.profile_update(self.__profile)
-
             elif m.topic == Topics.SETTINGS_UP:
                 settings_new = json.loads(m.payload)
 
@@ -308,6 +305,9 @@ class Kickstart():
                 self.__settings = settings_new
                 self.__config["settings"] = self.__settings
                 self.__file.store_config(self.__config_file, json.dumps(self.__config, indent=4))
+
+                # reconfigure downloader thread
+                self.__downloader.profile_update(self.__settings)
 
                 # broadcast new settings to everyone
                 self.__mqtt.publish(Topics.SETTINGS, self.__settings, retain=True)
@@ -379,7 +379,8 @@ class Kickstart():
                                                          "[" + ip + "]",
                                                          self.__fw_version,
                                                          self.__settings['dirs'],
-                                                         self.__profile)
+                                                         self.__profile,
+                                                         self.__settings)
 
                         # start the thread
                         self.__thread_list[ip].start()

@@ -562,14 +562,7 @@ function interprete_profile() {
     document.getElementById('initial_login_username').value = profile["initial_login"]["username"];
     document.getElementById('initial_login_password').value = profile["initial_login"]["password"];
 
-    document.getElementById('check_active').checked = profile["auto-update"]["active"];
-    document.getElementById('check_uri').value = profile["auto-update"]["uri"];
-    document.getElementById('check_interval').value = Math.round(profile["auto-update"]["check_interval"]);
-
     document.getElementById('irm_active').checked = profile["irm"]["active"];
-    document.getElementById('irm_uri').value = profile["irm"]["uri"];
-    document.getElementById('irm_token').value = profile["irm"]["token"];
-    document.getElementById('irm_group').value = profile["irm"]["group"];
 
     document.getElementById('aftercare_active').checked       = profile["aftercare"]["active"];
     document.getElementById('aftercare_login_username').value = profile["aftercare"]["login"]["username"];
@@ -591,6 +584,14 @@ function interprete_settings() {
     document.getElementById('kickstarter_password').value       = settings["login"]["password"];
     document.getElementById('kickstarter_prefix').value         = settings["net"]["prefix"];
     document.getElementById('kickstarter_ignore_ips').value     = settings["net"]["ignore_ips"];
+
+    document.getElementById('irm_uri').value                    = settings["irm"]["uri"];
+    document.getElementById('irm_token').value                  = settings["irm"]["token"];
+    document.getElementById('irm_group').value                  = settings["irm"]["group"];
+
+    document.getElementById('check_active').checked             = settings["auto-update"]["active"];
+    document.getElementById('check_uri').value                  = settings["auto-update"]["uri"];
+    document.getElementById('check_interval').value             = Math.round(settings["auto-update"]["check_interval"]);
 
     if (settings["net"]["interface"] === "eth1") {
         document.getElementById('kickstarter_interface_eth0').checked = false;
@@ -656,6 +657,14 @@ function store_kickstarter_settings() {
     settings["net"]["prefix"]     = document.getElementById('kickstarter_prefix').value;
     settings["net"]["ignore_ips"] = document.getElementById('kickstarter_ignore_ips').value;
 
+    settings["auto-update"]["active"] = document.getElementById('check_active').checked;
+    settings["auto-update"]["uri"] = document.getElementById('check_uri').value;
+    settings["auto-update"]["check_interval"] = document.getElementById('check_interval').value;
+
+    settings["irm"]["uri"] = document.getElementById('irm_uri').value;
+    settings["irm"]["token"] = document.getElementById('irm_token').value;
+    settings["irm"]["group"] = document.getElementById('irm_group').value;
+
     send_message(JSON.stringify(settings), top_topic + "/settings_up");
 
     // scroll to the top to signal, that storing happened
@@ -670,14 +679,8 @@ function store_device_settings() {
     profile["firmware"]["version"] = document.getElementById('firmware_to_write').value;
 
     profile["config_table"]["filename"] = document.getElementById('config_to_write').value;
-    profile["auto-update"]["active"] = document.getElementById('check_active').checked;
-    profile["auto-update"]["uri"] = document.getElementById('check_uri').value;
-    profile["auto-update"]["check_interval"] = document.getElementById('check_interval').value;
 
     profile["irm"]["active"]  = document.getElementById('irm_active').checked;
-    profile["irm"]["uri"] = document.getElementById('irm_uri').value;
-    profile["irm"]["token"] = document.getElementById('irm_token').value;
-    profile["irm"]["group"] = document.getElementById('irm_group').value;
 
     // get all the files that should be uploaded to the device
     let uploads = [];
@@ -732,6 +735,7 @@ function aftercare_reset() {
 // paint a table with all files that should be uploaded to the device
 function display_upload() {
     let table = document.querySelector("#upload_table");
+    let i = 1;
     table.setAttribute('class', 'list_table');
     table.innerHTML = "";
 
@@ -750,7 +754,6 @@ function display_upload() {
 
     // paint all existing upload files
     if (Object.keys(localfiles).length) {
-        let i = 1;
         for (let entry of profile["uploads"]) {
             add_upload(entry, i, false);
             i++;
@@ -824,6 +827,7 @@ function add_upload(entry, i, paint_add) {
 // paint a table with all requests to be sent in aftercare phase
 function display_aftercare_requests() {
     let table = document.querySelector("#aftercare_table");
+    let i = 1;
     table.setAttribute('class', 'list_table');
     table.innerHTML = "";
 
@@ -839,7 +843,6 @@ function display_aftercare_requests() {
 
     // paint all existing requests
     if (Object.keys(localfiles).length) {
-        let i = 1;
         for (let entry of profile["aftercare"]["requests"]) {
             add_aftercare_request(entry, i, false);
             i++;

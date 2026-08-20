@@ -12,10 +12,11 @@ import jsonpath
 from irm import Irm
 
 class Updater(Thread):
-    def __init__(self, logger, queue, ip, firmware, dirs, profile):
+    def __init__(self, logger, queue, ip, firmware, dirs, profile, settings):
         urllib3.disable_warnings()
         self.__logger = logger
         self.__profile = profile
+        self.__settings = settings
         Thread.__init__(self)
         self.__queue = queue
         self.__ip = ip
@@ -381,20 +382,20 @@ class Updater(Thread):
         return True
 
     def __register_irm(self):
-        if not "irm" in self.__profile:
+        if not "irm" in self.__settings:
             return True
         if not "active" in self.__profile["irm"]:
             return True
-        if not "uri" in self.__profile["irm"]:
+        if not "uri" in self.__settings["irm"]:
             return True
-        if not "token" in self.__profile["irm"]:
+        if not "token" in self.__settings["irm"]:
             return True
-        if not "group" in self.__profile["irm"]:
+        if not "group" in self.__settings["irm"]:
             return True
         active = self.__profile["irm"]["active"]
-        uri    = self.__profile["irm"]["uri"]
-        token  = self.__profile["irm"]["token"]
-        group  = self.__profile["irm"]["group"]
+        uri    = self.__settings["irm"]["uri"]
+        token  = self.__settings["irm"]["token"]
+        group  = self.__settings["irm"]["group"]
 
         if active is False:
             self.__logger.info(f"{self.__serialnumber}: Skipping iRM registration")

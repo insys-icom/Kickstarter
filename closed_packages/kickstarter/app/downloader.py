@@ -10,33 +10,32 @@ import requests
 
 
 class Downloader(Thread):
-    def __init__(self, logger, shutdown, queue, profile, settings):
+    def __init__(self, logger, shutdown, queue, settings):
         Thread.__init__(self)
         disable_warnings()
         self.__logger = logger
         self.__queue = queue
         self.__shutdown = shutdown
-        self.__profile = profile
         self.__settings = settings
         self.__check_intervall = 0
         self.__time_checked = 0
         self.__online = False
 
     def run(self):
-        self.profile_update(self.__profile)
+        self.profile_update(self.__settings)
         while True:
             if self.__shutdown.wait(timeout=15):
                 self.__logger.info('Shutting down downloader')
                 break
 
-            self.__check_internet(self.__profile['auto-update']['uri'])
+            self.__check_internet(self.__settings['auto-update']['uri'])
             self.__search_new_firmware()
 
-    def profile_update(self, profile):
-        self.__check_intervall = int(self.__profile['auto-update']['check_interval']) * 3600
+    def profile_update(self, settings):
+        self.__check_intervall = int(self.__settings['auto-update']['check_interval']) * 3600
         self.__time_checked = 0 - self.__check_intervall
-        self.__profile = profile
-        self.__logger.info(f'Set checking for new firmware to "{self.__profile["auto-update"]["active"]}"')
+        self.__settings = settings
+        self.__logger.info(f'Set checking for new firmware to "{self.__settings["auto-update"]["active"]}"')
 
     # get head of URI of Auto Update server to check for internet connection state
     def __check_internet(self, url):
@@ -55,7 +54,7 @@ class Downloader(Thread):
 
     # search for new firmware
     def __search_new_firmware(self):
-        if self.__profile["auto-update"]["active"] is not True:
+        if self.__settings["auto-update"]["active"] is not True:
             return
 
         if self.__time_checked == 0 or monotonic() > (self.__time_checked + self.__check_intervall):
@@ -83,7 +82,7 @@ class Downloader(Thread):
     # contact the Auto Update server for the firmware
     def __start_autoupdate(self):
         dl_path = None
-        uri = self.__profile['auto-update']['uri']
+        uri = self.__settings['auto-update']['uri']
         protocol = uri.split('/')[0]
         hostname = uri.split('/')[2]
 

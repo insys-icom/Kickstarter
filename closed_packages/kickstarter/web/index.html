@@ -79,9 +79,9 @@
     </div>
 
     <div class="box box_device_settings">
-        <h3><input id="pic_toggle_init_login" type="image" src="pics/down.png" width="15px"
+        <h3><input id="pic_toggle_init_login" type="image" src="pics/up.png" width="15px"
                    onclick="toggle_box_content('init_login', 'toggle')"> Initial login</h3>
-        <div id="content_init_login" style="display: none;">
+        <div id="content_init_login" style="display: block;">
             <p>Only necessary if devices are not in default settings</p>
             <table>
                 <tr>
@@ -97,68 +97,43 @@
     </div>
 
     <div class="box box_device_settings">
-        <h3><input id="pic_toggle_upload_firmware" type="image" src="pics/down.png" width="15px"
+        <h3><input id="pic_toggle_upload_firmware" type="image" src="pics/up.png" width="15px"
                    onclick="toggle_box_content('upload_firmware', 'toggle')"> Uploading Firmware</h3>
-        <div id="content_upload_firmware" style="display: none;">
+        <div id="content_upload_firmware" style="display: block;">
             <table>
                 <tr>
                     <td>Firmware version</td>
                     <td><select id="firmware_to_write" > </select></td>
                 </tr>
-                <tr><td>&nbsp;</td></tr>
-                <tr>
-                    <td>Check for new firmware</td>
-                    <td><input id="check_active" type="checkbox"></td>
-                </tr>
-                <tr>
-                    <td>Interval for firmware check</td>
-                    <td><input id="check_interval" type="text" size=4> hours</td>
-                </tr>
-                <tr>
-                    <td>URI for firmware check</td>
-                    <td><input id="check_uri" type="text" size=55></td>
-                </tr>
             </table>
         </div>
     </div>
 
     <div class="box box_device_settings">
-        <h3><input id="pic_toggle_register_irm" type="image" src="pics/down.png" width="15px"
+        <h3><input id="pic_toggle_register_irm" type="image" src="pics/up.png" width="15px"
                    onclick="toggle_box_content('register_irm', 'toggle')"> Register device at iRM (icom Router Management)</h3>
-        <div id="content_register_irm" style="display: none;">
+        <div id="content_register_irm" style="display: block;">
             <table>
                 <tr>
                     <td>Activate registration of device</td>
                     <td><input id="irm_active" type="checkbox"></td>
                 </tr>
-                <tr>
-                    <td>URI of iRM API</td>
-                    <td><input id="irm_uri" type="text" size=55></td>
-                </tr>
-                <tr>
-                    <td>API token</td>
-                    <td><input id="irm_token" type="text" size=55></td>
-                </tr>
-                <tr>
-                    <td>Group for new devices</td>
-                    <td><input id="irm_group" type="text" size=55></td>
-                </tr>
             </table>
         </div>
     </div>
 
     <div class="box box_device_settings">
-        <h3><input id="pic_toggle_upload_more" type="image" src="pics/down.png" width="15px"
+        <h3><input id="pic_toggle_upload_more" type="image" src="pics/up.png" width="15px"
                    onclick="toggle_box_content('upload_more', 'toggle')"> Uploading more (e.g. container, profiles, licenses)</h3>
-        <div id="content_upload_more" style="display: none;">
+        <div id="content_upload_more" style="display: block;">
             <table id="upload_table"></table>
         </div>
     </div>
 
     <div class="box box_device_settings">
-        <h3><input id="pic_toggle_upload_csv" type="image" src="pics/down.png" width="15px"
+        <h3><input id="pic_toggle_upload_csv" type="image" src="pics/up.png" width="15px"
                    onclick="toggle_box_content('upload_csv', 'toggle')"> Upload and apply CSV config table</h3>
-        <div id="content_upload_csv" style="display: none;">
+        <div id="content_upload_csv" style="display: block;">
             <table>
                 <tr>
                     <td>Config table</td>
@@ -170,9 +145,9 @@
     </div>
 
     <div class="box box_device_settings">
-        <h3><input id="pic_toggle_aftercare" type="image" src="pics/down.png" width="15px"
+        <h3><input id="pic_toggle_aftercare" type="image" src="pics/up.png" width="15px"
                    onclick="toggle_box_content('aftercare', 'toggle')"> Aftercare: HTTP(S) requests to the finished devices</h3>
-        <div id="content_aftercare" style="display: none;">
+        <div id="content_aftercare" style="display: block;">
             <table>
                 <tr>
                     <td>Activate aftercare</td>
@@ -204,12 +179,12 @@
     </div>
 
     <div class="box box_kickstarter_settings">
-        <h3><input id="pic_toggle_kickstarter_login" type="image" src="pics/down.png" width="15px"
+        <h3><input id="pic_toggle_kickstarter_login" type="image" src="pics/up.png" width="15px"
                    onclick="toggle_box_content('kickstarter_login', 'toggle')"> Login for this Kickstarter site</h3>
-        <div id="content_kickstarter_login" style="display: none;">
+        <div id="content_kickstarter_login" style="display: block;">
             <table>
                 <tr>
-                    <td>Activate login protectionUser name</td>
+                    <td>Activate login protection</td>
                     <td><input id="kickstarter_login_active" type="checkbox"></td>
                 </tr>
                 <tr>
@@ -227,9 +202,9 @@
     </div>
 
     <div class="box box_kickstarter_settings">
-        <h3><input id="pic_toggle_kickstarter_network" type="image" src="pics/down.png" width="15px"
+        <h3><input id="pic_toggle_kickstarter_network" type="image" src="pics/up.png" width="15px"
                    onclick="toggle_box_content('kickstarter_network', 'toggle')"> Network settings</h3>
-        <div id="content_kickstarter_network" style="display: none;">
+        <div id="content_kickstarter_network" style="display: block;">
             <table>
                 <tr>
                     <td>Interface</td>
@@ -246,6 +221,49 @@
                 <tr>
                     <td>Ignore these IPv6 addresses</td>
                     <td><input type="text" id="kickstarter_ignore_ips" size=50></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="box box_kickstarter_settings">
+        <h3><input id="pic_toggle_kickstarter_autoupdate" type="image" src="pics/up.png" width="15px"
+                   onclick="toggle_box_content('kickstarter_autoupdate', 'toggle')"> Search for new firmware</h3>
+        <div id="content_kickstarter_autoupdate" style="display: block;">
+            <table>
+                <tr>
+                    <td>Check for new firmware</td>
+                    <td><input id="check_active" type="checkbox"></td>
+                </tr>
+                <tr>
+                    <td>Interval for firmware check</td>
+                    <td><input id="check_interval" type="text" size=4> hours</td>
+                </tr>
+                <tr>
+                    <td>URI for firmware check</td>
+                    <td><input id="check_uri" type="text" size=55></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+
+    <div class="box box_kickstarter_settings">
+        <h3><input id="pic_toggle_kickstarter_irm" type="image" src="pics/up.png" width="15px"
+                   onclick="toggle_box_content('kickstarter_irm', 'toggle')"> iRM (icom Router Management)</h3>
+        <div id="content_kickstarter_irm" style="display: block;">
+            <table>
+                <tr>
+                    <td>URI of iRM API</td>
+                    <td><input id="irm_uri" type="text" size=55></td>
+                </tr>
+                <tr>
+                    <td>API token</td>
+                    <td><input id="irm_token" type="text" size=55></td>
+                </tr>
+                <tr>
+                    <td>Group for new devices</td>
+                    <td><input id="irm_group" type="text" size=55></td>
                 </tr>
             </table>
         </div>
