@@ -67,7 +67,10 @@ compile()
 
 install_staging()
 {
-    cp -rv ${PKG_INSTALL_DIR}/* ${STAGING_DIR} || exit_failure "failed to install ${PKG_DIR} to ${STAGING_DIR}"
+    for i in $(ls "${PKG_INSTALL_DIR}") ; do
+        mkdir -p "${STAGING_DIR}/${i}"
+        cp -rv "${PKG_INSTALL_DIR}/${i}/"* "${STAGING_DIR}/${i}" || exit_failure "failed to install ${PKG_DIR} to ${STAGING_DIR}"echo $i
+    done
 }
 
 . ${HELPERSDIR}/call_functions.sh
