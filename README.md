@@ -1,5 +1,5 @@
 # Kickstarter
-Set up [INSYS icom devices](https://www.insys-icom.com/en/products/router-gateways/) completely autonomously and in parallel!
+Set up fresh [INSYS icom devices](https://www.insys-icom.com/en/products/router-gateways/) out of the box completely autonomously and in parallel!
 
 **Kickstarter** is a container that runs on an INSYS icom device, such as the MRX. It automates the setup of your INSYS icom devices by:
 - Updating the [**icom OS firmware**](https://icom-os.releasenotes.io/)
@@ -7,7 +7,7 @@ Set up [INSYS icom devices](https://www.insys-icom.com/en/products/router-gatewa
 - Applying device-specific **individual settings**
 - Registering devices at [**iRM** (icom Router Management)](https://cloud.insys-icom.com)
 
-It can update devices in parallel! That saves a huge amount of time when setting up a whole bunch of new devices.
+It can update several devices in parallel! That saves a huge amount of time when setting up a whole bunch of new devices.
 ![Kickstarter Overview](doc/Kickstarter_Overview.png)
 
 ## UserInterface
@@ -27,9 +27,11 @@ These settings are needed on the **MRX that runs** that runs the Kickstarter con
 Kickstarter uses the Internet for downloading the latest firmware images.
 
 MRX config in new UI:
+
 ![Configuration of MRX that runs Kickstarter new UI](doc/Kickstarter_MRX_config_new_UI.png)
 
 MRX config in classic UI:
+
 ![Configuration of MRX that runs Kickstarter](doc/Kickstarter_MRX_config.png)
 
 ## Building the container from scratch
