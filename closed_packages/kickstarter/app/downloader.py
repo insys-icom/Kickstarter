@@ -116,8 +116,7 @@ class Downloader(Thread):
         self.__download_file(dl_path, firmware_path, firmware_file_name, protocol, hostname)
 
         # download the file for arm64
-        dl_path = f"{dl_path.split("tar")[0]}arm64.tar"
-        firmware_file_name = f"{firmware_file_name.split("tar")[0]}arm64.tar"
+        firmware_file_name = firmware_file_name.replace(".arm32.tar", ".arm64.tar")
 
         return self.__download_file(dl_path, firmware_path, firmware_file_name, protocol, hostname)
 
