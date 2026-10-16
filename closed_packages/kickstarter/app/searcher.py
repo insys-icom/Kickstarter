@@ -49,6 +49,8 @@ class Searcher(Thread):
 
     # find all IP adresses we should ignore
     def __find_ignore_ips(self):
+        # wait to give the router to chance to create all link local IP addresses
+        sleep(3)
         own_ips = []
         while True:
             ret = self.__find_own_ip()
@@ -73,7 +75,7 @@ class Searcher(Thread):
             return None
 
         if not path.exists(self.__uds):
-            self.__logger.info("Unable to get own IP addresses - is unauthorized access to CLI active?")
+            self.__logger.info('Searcher: Unable to contact CLI of host - is unauthorized "status" access to CLI active?')
             msg = { "alarm": 'This container needs access to the router CLI without authentication, at least the user group "Status"' }
             self.__queue.put(msg)
 
@@ -81,7 +83,7 @@ class Searcher(Thread):
 
         cli = Cli(self.__uds)
         if cli is False:
-            self.__logger.info("Unable to get own IP addresses")
+            self.__logger.info("Searcher: Unable to contact CLI of host")
             exit(-1)
 
         text = cli.get("status.sysdetail.ip_addresses")
