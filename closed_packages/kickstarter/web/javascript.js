@@ -11,7 +11,7 @@ let root = document.querySelector(':root');
 
 // entry point: start MQTT web socket; the rest will be started by consuming received MQTT messages
 function start_mqtt() {
-    const host = "ws://" + window.location.hostname + ":9001";
+    const host = "ws://" + globalThis.location.hostname + ":9001";
     const clientId = 'ws_' + Math.random().toString().substring(2)
     const options = {
         keepalive: 30,
@@ -48,7 +48,7 @@ function load_store() {
         localStorage.setItem('store', JSON.stringify(store));
         console.log("create new Store");
     }
-    for (i in store["content"]) {
+    for (let i in store["content"]) {
         if (!document.getElementById("content_" + i)) {
             break;
         }
@@ -127,8 +127,8 @@ function on_message(topic, message) {
         interprete_profile();
     }
     else if (topic == (top_topic + "/status")) {
-        colour = "red";
-        text = text_disconnected;
+        let colour = "red";
+        let text = text_disconnected;
         if (mes == "online") {
             colour = "green";
             text = text_connected;
@@ -138,8 +138,8 @@ function on_message(topic, message) {
         document.getElementById("status_kickstarter").innerHTML = text;
     }
     else if (topic == (top_topic + "/internet")) {
-        colour = "red";
-        text = text_disconnected;
+        let colour = "red";
+        let text = text_disconnected;
         if (mes == "online") {
             colour = "green";
             text = text_connected;
@@ -204,7 +204,7 @@ function view_boxes(menu) {
     root.style.setProperty('--box_device_settings_display', device_settings_display);
     root.style.setProperty('--box_kickstarter_settings_display', kickstarter_settings_display);
     root.style.setProperty('--box_files_display', files_display);
-    root.style.setProperty('--box_help_index', help_index);
+    root.style.setProperty('--box_help_index_display', help_index);
     root.style.setProperty('--box_help_display', help_display);
     root.style.setProperty('--box_upload_display', upload_display);
     root.style.setProperty('--box_save_device_display', save_device_display);
@@ -242,7 +242,7 @@ function device_table_head(table, json) {
     let thead = table.createTHead();
     let row = thead.insertRow();
     keys = Object.keys(json);
-    for (key of keys) {
+    for (let key of keys) {
         let text = key
         if (key == "in_progress") {
             text = '';
@@ -257,7 +257,7 @@ function device_table_head(table, json) {
 function device_table(table, json) {
     for (let line of json) {
         let row = table.insertRow();
-        keys = Object.keys(line);
+        let keys = Object.keys(line);
         let i = 0;
         for (let key of keys) {
             if (key == "in_progress") {
@@ -318,9 +318,9 @@ function display_stored_files() {
     let table = document.querySelector("#filetable");
     table.innerHTML = "";
     if (localfiles.length > 0) {
-        for (line of localfiles) {
+        for (let line of localfiles) {
             let row = table.insertRow();
-            keys = Object.keys(line);
+            let keys = Object.keys(line);
 
             // print download icon
             let dl = document.createElement("input");
@@ -350,7 +350,7 @@ function display_stored_files() {
             row.insertCell().appendChild(document.createTextNode(line[keys[2]]));
 
             // print sha256
-            sha256 = line[keys[3]]
+            let sha256 = line[keys[3]]
             let s = "---";
             if (sha256.length > 3) {
                 s = sha256.substr(0, 6) + "....";// + sha256.substr(sha256.length - 6, sha256.length);
@@ -409,7 +409,7 @@ function display_config_to_write() {
     while (select.firstChild) {
         select.removeChild(select.lastChild);
     }
-    selected_config = profile["config_table"]["filename"];
+    let selected_config = profile["config_table"]["filename"];
 
     // add "---" as none
     let opt = document.createElement('option');
@@ -421,7 +421,7 @@ function display_config_to_write() {
 
     // add all locally stored config files
     if (Object.keys(localfiles).length) {
-        array = [];
+        let array = [];
         for (let i of localfiles) {
             // only accept files ending with .csv
             if ((i["name"].substr(i["name"].length - 4, i["name"].length)) == ".csv") {
@@ -462,7 +462,7 @@ function display_firmware_to_write() {
     while (select.firstChild) {
         select.removeChild(select.lastChild);
     }
-    selected_firmware = profile["firmware"]["version"];
+    let selected_firmware = profile["firmware"]["version"];
 
     // add "---" as none
     let opt = document.createElement('option');

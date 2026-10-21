@@ -248,7 +248,7 @@ class Updater(Thread):
                 self.__logger.info(f"{logprefix}Authentication failed")
             return False
 
-        if not "access" in response.json():
+        if "access" not in response.json():
             if not silent:
                 self.__logger.info(f"{logprefix}No authorisation in session header")
             return False
@@ -382,15 +382,15 @@ class Updater(Thread):
         return True
 
     def __register_irm(self):
-        if not "irm" in self.__settings:
+        if "irm" not in self.__settings:
             return True
-        if not "active" in self.__profile["irm"]:
+        if "active" not in self.__profile["irm"]:
             return True
-        if not "uri" in self.__settings["irm"]:
+        if "uri" not in self.__settings["irm"]:
             return True
-        if not "token" in self.__settings["irm"]:
+        if "token" not in self.__settings["irm"]:
             return True
-        if not "group" in self.__settings["irm"]:
+        if "group" not in self.__settings["irm"]:
             return True
         active = self.__profile["irm"]["active"]
         uri    = self.__settings["irm"]["uri"]
@@ -660,13 +660,13 @@ class Updater(Thread):
         if self.__serialnumber != "":
             logprefix = f"{self.__serialnumber}: "
 
-        if not "aftercare" in self.__profile:
+        if "aftercare" not in self.__profile:
             return True
-        if not "active" in self.__profile["aftercare"]:
+        if "active" not in self.__profile["aftercare"]:
             return True
-        if not "requests" in self.__profile["aftercare"]:
+        if "requests" not in self.__profile["aftercare"]:
             return True
-        if not "logfile" in self.__profile["aftercare"]:
+        if "logfile" not in self.__profile["aftercare"]:
             return True
         if self.__profile["aftercare"]["active"] is not True:
             self.__logger.info(f"{logprefix}Skipping aftercare phase")
@@ -693,7 +693,7 @@ class Updater(Thread):
 
         answers = {}
         for request in self.__profile["aftercare"]["requests"]:
-            if not "name" in request or not "request" in request or not "jsonpath" in request:
+            if "name" not in request or "request" not in request or "jsonpath" not in request:
                 continue
 
             # try a few times to get the expected result

@@ -4,7 +4,7 @@
     --box_kickstarter_settings_display: none;
     --box_files_display: none;
     --box_help_display: none;
-    --box_help_index: none;
+    --box_help_index_display: none;
     --box_upload_display: none;
     --box_save_device_display: none;
     --box_save_kickstarter_display: none;
@@ -18,17 +18,14 @@ body {
 }
 
 navi {
-    /* grid-column: menu-start / left-start; */
     grid-column: 1 / 2;
     grid-row: 1 / -1;
 }
 left {
-    /* grid-column: left-start / right-start; */
     grid-column: 2 / 3;
     grid-row: 1 / -1;
 }
 right {
-    /*grid-column: right-start / right-end; */
     grid-column: 3 / -1;
     grid-row: 1 / -1;
 }
@@ -60,6 +57,7 @@ a:link, a:visited, a:active {
 }
 
 .box_help_index {
+    display: var(--box_help_index_display);
     margin-top: 0.1cm;
     margin-left: 0.2cm;
     margin-right: 0.4cm;
@@ -98,10 +96,6 @@ a:link, a:visited, a:active {
 .box.box_files {
     display: var(--box_files_display);
     max-width: 700px;
-}
-
-.box_help_index {
-    display: var(--box_help_index);
 }
 
 .box.box_help {

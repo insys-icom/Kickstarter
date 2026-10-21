@@ -42,7 +42,6 @@ class Mqtt(logging.Handler):
                                     keepalive=60,
                                     bind_address="")
         self.__client.loop_start()
-        return
 
     def __init_logger(self):
         logging.Handler.__init__(self)

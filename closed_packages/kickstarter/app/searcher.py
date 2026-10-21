@@ -82,10 +82,6 @@ class Searcher(Thread):
             return ips
 
         cli = Cli(self.__uds)
-        if cli is False:
-            self.__logger.info("Searcher: Unable to contact CLI of host")
-            exit(-1)
-
         text = cli.get("status.sysdetail.ip_addresses")
         for line in str(text).split("\n"):
             if "].ip_address=" in line and "fe80::" in line:

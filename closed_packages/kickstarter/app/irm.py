@@ -20,7 +20,7 @@ class Irm():
             response = request("GET", self.__uri + 'inventory/device-groups',
                                 data=json.dumps(payload), headers=self.__header, timeout=21)
         except Exception as e:
-            self.__logger.info(f"iRM: Could not connect to iRM at: {self.__uri}; could not get group ID: {e}")
+            self.__logger.info(f"iRM: Could not connect to iRM at: {self.__uri}; could not get group ID: {str(e)}")
             return None
 
         if response.status_code != 200:
@@ -53,7 +53,7 @@ class Irm():
                                data=json.dumps(payload),
                                headers=self.__header, timeout=22)
         except Exception as e:
-            self.__logger.info(f'iRM: Could not create "{group_name}": {e}')
+            self.__logger.info(f'iRM: Could not create "{group_name}": {str(e)}')
             return None
 
         if response.status_code != 201:
@@ -76,7 +76,7 @@ class Irm():
             response = request("POST", self.__uri + 'inventory/managed-devices', data=json.dumps(payload),
                                 headers=self.__header, timeout=23)
         except Exception as e:
-            self.__logger.info(f"iRM: Could not create device with serial number: {serial}: {e}")
+            self.__logger.info(f"iRM: Could not create device with serial number: {serial}: {str(e)}")
             return None
 
         if response.status_code == 201:
@@ -88,7 +88,7 @@ class Irm():
             try:
                 response = request("GET", url, data=json.dumps(payload), headers=self.__header, timeout=24)
             except Exception as e:
-                self.__logger.info(f'iRM: Could not connect to iRM at: {self.__uri}; could check device with serial number: {e}')
+                self.__logger.info(f'iRM: Could not connect to iRM at: {self.__uri}; could check device with serial number: {str(e)}')
                 return None
 
             if response.status_code != 200:
@@ -105,7 +105,7 @@ class Irm():
         try:
             response = request("GET", url, data=json.dumps(payload), headers=self.__header, timeout=120)
         except Exception as e:
-            self.__logger.info(f"iRM: Could not connect to iRM at: {self.__uri}; could not get Connection Profile: {e}")
+            self.__logger.info(f"iRM: Could not connect to iRM at: {self.__uri}; could not get Connection Profile: {str(e)}")
             return False
 
         if response.status_code != 200:
@@ -125,7 +125,7 @@ class Irm():
         try:
             response = request("DELETE", url, data=json.dumps(payload), headers=self.__header, timeout=26)
         except Exception as e:
-            self.__logger.info(f"iRM: Could not connect to iRM at: {self.__uri}; could not delete device: {e}")
+            self.__logger.info(f"iRM: Could not connect to iRM at: {self.__uri}; could not delete device: {str(e)}")
             return False
 
         if response.status_code != 201:

@@ -125,11 +125,11 @@ class Kickstart():
         if self.__path_aftercare is None:
             return False
 
-        if not "aftercare" in self.__profile:
+        if "aftercare" not in self.__profile:
             return True
-        if not "active" in self.__profile["aftercare"]:
+        if "active" not in self.__profile["aftercare"]:
             return True
-        if not "logfile" in self.__profile["aftercare"]:
+        if "logfile" not in self.__profile["aftercare"]:
             return True
 
         try:
@@ -146,7 +146,7 @@ class Kickstart():
         if self.__path_aftercare is None:
             return False
 
-        if not 'aftercare' in message:
+        if 'aftercare' not in message:
             return False
 
         self.__aftercare_data[message['ip']] = message['aftercare']
