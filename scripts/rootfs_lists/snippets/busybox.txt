@@ -239,7 +239,7 @@ slink /sbin/fakeidentd ../bin/busybox 777 0 0
 slink /sbin/ftpd ../bin/busybox 777 0 0
 slink /sbin/getty ../bin/busybox 777 0 0
 slink /sbin/halt ../bin/busybox 777 0 0
-slink /sbin/httpd ../bin/busybox 777 0 0
+#slink /sbin/httpd ../bin/busybox 777 0 0
 slink /sbin/i2cdetect ../bin/busybox 777 0 0
 slink /sbin/i2cdump ../bin/busybox 777 0 0
 slink /sbin/i2cget ../bin/busybox 777 0 0

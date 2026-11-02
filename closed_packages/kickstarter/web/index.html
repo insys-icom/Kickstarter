@@ -110,6 +110,19 @@
     </div>
 
     <div class="box box_device_settings">
+        <h3><input id="pic_toggle_register_ics" type="image" src="pics/up.png" width="15px"
+                   onclick="toggle_box_content('register_ics', 'toggle')"> Register device at iCS (icom Connecitivty Suite)</h3>
+        <div id="content_register_ics" style="display: block;">
+            <table>
+                <tr>
+                    <td>Activate registration of device</td>
+                    <td><input id="ics_active" type="checkbox"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="box box_device_settings">
         <h3><input id="pic_toggle_register_irm" type="image" src="pics/up.png" width="15px"
                    onclick="toggle_box_content('register_irm', 'toggle')"> Register device at iRM (icom Router Management)</h3>
         <div id="content_register_irm" style="display: block;">
@@ -247,6 +260,26 @@
         </div>
     </div>
 
+    <div class="box box_kickstarter_settings">
+        <h3><input id="pic_toggle_kickstarter_ics" type="image" src="pics/up.png" width="15px"
+                   onclick="toggle_box_content('kickstarter_ics', 'toggle')"> iCS (icom Connecitivity Suite)</h3>
+        <div id="content_kickstarter_ics" style="display: block;">
+            <table>
+                <tr>
+                    <td>URI of iCS API</td>
+                    <td><input id="ics_uri" type="text" size=55></td>
+                </tr>
+                <tr>
+                    <td>API token</td>
+                    <td><input id="ics_token" type="text" size=55></td>
+                </tr>
+                <tr>
+                    <td>Customer ID</td>
+                    <td><input id="ics_customer_id" type="text" size=55></td>
+                </tr>
+            </table>
+        </div>
+    </div>
 
     <div class="box box_kickstarter_settings">
         <h3><input id="pic_toggle_kickstarter_irm" type="image" src="pics/up.png" width="15px"

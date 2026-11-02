@@ -6,7 +6,7 @@ ROOTFS_LIST="rootfs_list_kickstarter.txt"
 
 PACKAGES_1=(
     "libxcrypt-4.5.2.sh"
-    "cacert-2026-08-13.sh"
+    "cacert-2026-10-20.sh"
     "zlib-1.3.sh"
     "tzdb-2026c.sh"
 )
@@ -24,6 +24,8 @@ PACKAGES_2=(
     "cJSON-1.7.19.sh"
     "asyncinotify-4.4.4.sh"
     "mqtt-5.15.2.min.js.sh"
+    "apr-1.7.6.sh"
+    "expat-2.9.0.sh"
 )
 PACKAGES_3=(
     "busybox-1.38.0.sh"
@@ -31,10 +33,12 @@ PACKAGES_3=(
     "metalog-20260811.sh"
     "radvd-2.21.sh"
     "libwebsockets-4.5.8.sh"
+    "apr-util-1.6.5.sh"
 )
 PACKAGES_4=(
     "mosquitto-2.1.2.sh"
-    "python-3.14.7.sh"
+    "python-3.15.2.sh"
+    "httpd-2.4.69.sh"
 )
 
 PACKAGES=(

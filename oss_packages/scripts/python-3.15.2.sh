@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # name of directory after extracting the archive in working directory
-PKG_DIR="Python-3.14.7"
+PKG_DIR="Python-3.15.2"
 
 # name of the archive in dl directory
 PKG_ARCHIVE_FILE="${PKG_DIR}.tar.xz"
@@ -10,15 +10,15 @@ PKG_ARCHIVE_FILE="${PKG_DIR}.tar.xz"
 PKG_DOWNLOAD="https://www.python.org/ftp/python/${PKG_DIR##*-}/${PKG_ARCHIVE_FILE}"
 
 # md5 checksum of archive in dl directory
-PKG_CHECKSUM="3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81"
+PKG_CHECKSUM="8b5536d280142ecf6cdfe15d12a21ba1c65e300bbf7b28a8d0cdb849575797de"
 
 
 
 SCRIPTSDIR=$(dirname $0)
 HELPERSDIR="${SCRIPTSDIR}/helpers"
 TOPDIR=$(realpath ${SCRIPTSDIR}/../..)
-. ${TOPDIR}/scripts/common_settings.sh
-. ${HELPERSDIR}/functions.sh
+. "${TOPDIR}"/scripts/common_settings.sh
+. "${HELPERSDIR}"/functions.sh
 PKG_ARCHIVE="${DOWNLOADS_DIR}/${PKG_ARCHIVE_FILE}"
 PKG_SRC_DIR="${SOURCES_DIR}/${PKG_DIR}"
 PKG_BUILD_DIR="${BUILD_DIR}/${PKG_DIR}"
@@ -26,39 +26,42 @@ PKG_INSTALL_DIR="${PKG_BUILD_DIR}/install"
 
 configure()
 {
-    # compile Python for amd64. This is only needed once in case there is not native python 3.13
-    AR_TARGET="${AR}"
-    NM_TARGET="${NM}"
-    RANLIB_TARGET="${RANLIB}"
-    export AR=x86_64-pc-linux-gnu-gcc-ar
-    export NM=x86_64-pc-linux-gnu-gcc-nm
-    export RANLIB=x86_64-pc-linux-gnu-gcc-ranlib
-
+    cd "${PKG_BUILD_DIR}"
     PYTHON_HOST="${PKG_BUILD_DIR}/Python_host"
-    mkdir -P "${PYTHON_HOST}"
-    cd "${PKG_BUILD_DIR}"
-    ./configure \
-        --prefix="${PYTHON_HOST}" \
-        --with-ensurepip=no \
-        --without-lto \
-        --disable-test-modules \
-		--without-readline \
-		--disable-optimizations \
-        || exit_failure "failed to configure Python for host"
 
-    make "${M3_MAKEFLAGS}" || exit_failure "failed to build Python for host"
-    make install || exit_failure "failed to install Python for host"
+    # compile Python for amd64. This is only needed once in case there is not native python with the same version
+    COMPILE_HOST=1
+    if [ ${COMPILE_HOST} == 1 ] ; then
+        AR_TARGET="${AR}"
+        NM_TARGET="${NM}"
+        RANLIB_TARGET="${RANLIB}"
 
-    ln -s "${PYTHON_HOST}/bin/python3.13" "${PYTHON_HOST}/bin/python3"
-    rm "${PKG_BUILD_DIR}/Parser/"*".o"
-    rm "${PKG_BUILD_DIR}/Programs/"*".o"
+        export AR=x86_64-pc-linux-gnu-gcc-ar
+        export NM=x86_64-pc-linux-gnu-gcc-nm
+        export RANLIB=x86_64-pc-linux-gnu-gcc-ranlib
 
-    # configure Python for target
-    export AR="${AR_TARGET}"
-    export NM="${NM_TARGET}"
-    export RANLIB="${RANLIB_TARGET}"
+        mkdir -P "${PYTHON_HOST}"
 
-    cd "${PKG_BUILD_DIR}"
+        ./configure \
+            --prefix="${PYTHON_HOST}" \
+            --with-ensurepip=no \
+            --without-lto \
+            --disable-test-modules \
+            --without-readline \
+            --disable-optimizations \
+            || exit_failure "failed to configure Python for host"
+
+        make "${M3_MAKEFLAGS}" || exit_failure "failed to build Python for host"
+        make install || exit_failure "failed to install Python for host"
+
+        rm "${PKG_BUILD_DIR}/Parser/"*".o"
+        rm "${PKG_BUILD_DIR}/Programs/"*".o"
+
+        export AR="${AR_TARGET}"
+        export NM="${NM_TARGET}"
+        export RANLIB="${RANLIB_TARGET}"
+    fi
+
     make distclean
 
     ac_cv_file__dev_ptc=no \
@@ -73,16 +76,14 @@ configure()
         --host="${M3_TARGET}" \
         --build=i686-pc-linux-gnu \
         --enable-ipv6 \
-        --with-lto \
         --with-ssl-default-suites=openssl \
         --disable-test-modules \
         --with-openssl="${STAGING_DIR}" \
         --with-build-python="${PYTHON_HOST}/bin/python3" \
         --without-static-libpython \
+        --with-tzpath="/usr/share/zoneinfo" \
+        --without-doc-strings \
         || exit_failure "failed to configure ${PKG_DIR}"
-
-    # skip checksharedmods test
-    sed -i 's|gdbhooks Programs/_testembed scripts checksharedmods rundsymutil|gdbhooks Programs/_testembed scripts rundsymutil|' "${PKG_BUILD_DIR}/Makefile"
 }
 
 compile()

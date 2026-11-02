@@ -1,0 +1,9 @@
+<Directory "/var/web">
+    Options Indexes FollowSymLinks
+    AllowOverride None
+    AuthType Basic
+    AuthName "Authorization necessary"
+    AuthBasicProvider file
+    AuthUserFile "/data/etc/httpd_password"
+    Require valid-user
+</Directory>

@@ -223,13 +223,21 @@ class File():
 
         if username == "" or password == "":
             active = False
+        else:
+            # create a new password file for httpd
+            with Popen([ "htpasswd", "-b", "-c", "/data/etc/httpd_password", username, password ], stdout=PIPE, stderr=PIPE) as c:
+                c.communicate()
 
-        # create a new config file for httpd
-        with open("/data/etc/httpd.conf", "w+", encoding='UTF-8') as f:
-            line = ""
-            if active:
-                line = f"/:{username}:{password}\n"
-            f.write(line)
+        # set the link to the correct include file
+        p = Path('/data/etc/httpd_directory')
+        try:
+            p.unlink(missing_ok=True)
+        except:
+            pass
+        if active:
+            p.symlink_to("/etc/httpd/with_auth", target_is_directory=False)
+        else:
+            p.symlink_to("/etc/httpd/no_auth", target_is_directory=False)
 
         # let httpd restart by init
         with Popen(["killall", "httpd"], stdout=PIPE, stderr=PIPE) as kill:

@@ -1,6 +1,9 @@
 # create directories and device nodes
 ::sysinit:/bin/prepare_fs.sh
 
+# create certificates
+::sysinit:/bin/create_cert.sh
+
 # start SSH server
 ::respawn:/bin/dropbear -R -F -b /etc/banner.txt
 
@@ -10,11 +13,11 @@
 # start radvd
 ::respawn:/bin/radvd -C /etc/radvd.conf -n -p /tmp/radvd.pid -m syslog
 
-# start web server vor MQTT broker access
-::respawn:/bin/httpd -f -p 80 -h /var/web -u nobody:nogroup -c /data/etc/httpd.conf
+# start web server
+::respawn:/bin/httpd -D FOREGROUND -f /etc/httpd/httpd.conf
 
 # start MQTT broker
-::respawn:/bin/mosquitto -c /etc/mosquitto.conf
+::respawn:/bin/mosquitto -c /etc/mosquitto/mosquitto.conf
 
 # start kickstarter
 ::respawn:/bin/python /root/kickstarter/kickstart.py -c /data/etc/kickstarter.json

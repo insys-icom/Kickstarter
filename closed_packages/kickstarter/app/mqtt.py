@@ -34,8 +34,8 @@ class Mqtt(logging.Handler):
         self.__client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
         self.__client.on_connect = self.on_connect
         self.__client.on_message = self.on_message
-        #self.__client.tls_set(profile["mqtt"]["ca"], profile["mqtt"]["cert"], profile["mqtt"]["key"])
-        #self.__client.user_data_set(profile)
+        #self.__client.tls_set(settings["mqtt"]["ca"], settings["mqtt"]["cert"], settings["mqtt"]["key"])
+        #self.__client.user_data_set(settings)
         self.__client.will_set(Topics.STATUS, "offline", retain=True)
         self.__client.connect_async(host=settings["mqtt"]["url"],
                                     port=int(settings["mqtt"]["port"]),

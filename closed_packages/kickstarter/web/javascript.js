@@ -11,8 +11,8 @@ let root = document.querySelector(':root');
 
 // entry point: start MQTT web socket; the rest will be started by consuming received MQTT messages
 function start_mqtt() {
-    const host = "ws://" + globalThis.location.hostname + ":9001";
-    const clientId = 'ws_' + Math.random().toString().substring(2)
+    const host = "wss://" + globalThis.location.hostname + "/mqtt/";
+    const clientId = 'wss_' + Math.random().toString().substring(2)
     const options = {
         keepalive: 30,
         clientId,
@@ -559,9 +559,19 @@ function interprete_profile() {
     display_upload();
     display_aftercare_requests();
 
+
+
     document.getElementById('initial_login_username').value = profile["initial_login"]["username"];
     document.getElementById('initial_login_password').value = profile["initial_login"]["password"];
 
+    if (!profile["ics"]) {
+        profile["ics"] = { "active": false };
+    }
+    document.getElementById('ics_active').checked = profile["ics"]["active"];
+
+    if (!profile["irm"]) {
+        profile["irm"] = { "active": false };
+    }
     document.getElementById('irm_active').checked = profile["irm"]["active"];
 
     document.getElementById('aftercare_active').checked       = profile["aftercare"]["active"];

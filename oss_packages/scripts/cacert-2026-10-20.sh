@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # name of directory after extracting the archive in working directory
-PKG_DIR="cacert-2026-08-13.pem"
+PKG_DIR="cacert-2026-10-20.pem"
 
 # name of the archive in dl directory (use "none" if empty)
 PKG_ARCHIVE_FILE="${PKG_DIR}"
@@ -10,7 +10,7 @@ PKG_ARCHIVE_FILE="${PKG_DIR}"
 PKG_DOWNLOAD="https://curl.se/ca/${PKG_DIR}"
 
 # md5 checksum of archive in dl directory (use "none" if empty)
-PKG_CHECKSUM="f66dff1bdf8f96060b8177976f8b7d9254bc89bc4db933d769f7384d28480bc9"
+PKG_CHECKSUM="796f1389bfea13c0ed78f663b765baaff54a508e5483786bd6ece73c5e3e3cbe"
 
 
 

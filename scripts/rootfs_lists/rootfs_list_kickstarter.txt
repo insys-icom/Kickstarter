@@ -34,12 +34,15 @@ dir /devices                    0755 0 0
 dir /devices/cli_no_auth        0755 0 0
 dir /etc                        0755 0 0
 dir /etc/dropbear               0755 0 0
+dir /etc/httpd                  0755 0 0
+dir /etc/mosquitto              0755 0 0
 dir /etc/ssl                    0755 0 0
 dir /etc/ssl/certs              0755 0 0
 dir /home                       0755 0 0
 dir /home/user                  0755 1000 1000
 dir /home/user/.ssh             0700 1000 1000
 dir /lib                        0755 0 0
+dir /lib/httpd                  0755 0 0
 dir /licence                    0755 0 0
 dir /proc                       0755 0 0
 dir /root                       0700 0 0
@@ -52,11 +55,10 @@ dir /usr                        0755 0 0
 dir /usr/local                  0755 0 0
 dir /usr/local/lib              0755 0 0
 dir /usr/share                  0755 0 0
-dir /usr/share/nano             0755 0 0
-dir /usr/share/terminfo         0755 0 0
-dir /usr/share/terminfo/x       0755 0 0
 dir /usr/share/zoneinfo         0755 0 0
 dir /var                        0755 0 0
+dir /var/log                    0755 0 0
+dir /var/log/httpd              0755 10 10
 dir /var/spool                  0755 0 0
 dir /var/spool/cron             0755 0 0
 dir /var/spool/cron/crontabs    0755 0 0
@@ -73,8 +75,12 @@ file /bin/metalog                     ${STAGING_DIR}/sbin/metalog               
 file /bin/selftest                    ${SKELETON_DIR}/bin/selftest.sh                0755 0 0
 file /bin/radvd                       ${STAGING_DIR}/sbin/radvd                      0755 0 0
 file /bin/mosquitto                   ${STAGING_DIR}/usr/local/sbin/mosquitto        0755 0 0
+file /bin/mosquitto_passwd            ${STAGING_DIR}/usr/local/bin/mosquitto_passwd  0755 0 0
 file /bin/openssl                     ${STAGING_DIR}/bin/openssl                     0755 0 0
 file /bin/prepare_fs.sh               ${SKELETON_DIR}/bin/prepare_fs.sh              0755 0 0
+file /bin/create_cert.sh              ${SKELETON_DIR}/bin/create_cert.sh             0755 0 0
+file /bin/httpd                       ${STAGING_DIR}/bin/httpd                       0755 0 0
+file /bin/htpasswd                    ${STAGING_DIR}/bin/htpasswd                    0755 0 0
 
 file /etc/hosts                       ${SKELETON_DIR}/etc/hosts                      0644 0 0
 file /etc/banner.txt                  ${SKELETON_DIR}/etc/banner.txt                 0644 0 0
@@ -90,8 +96,12 @@ file /etc/shells                      ${SKELETON_DIR}/etc/shells                
 file /etc/protocols                   ${SKELETON_DIR}/etc/protocols                  0644 0 0
 file /etc/radvd.conf                  ${SKELETON_DIR}/etc/radvd.conf                 0644 0 0
 file /etc/radvd_template.conf         ${SKELETON_DIR}/etc/radvd_template.conf        0644 0 0
-file /etc/mosquitto.conf              ${SKELETON_DIR}/etc/mosquitto.conf             0644 0 0
+file /etc/mosquitto/mosquitto.conf    ${SKELETON_DIR}/etc/mosquitto/mosquitto.conf   0644 0 0
 slink /etc/ssl/certs/ca-certificates.crt /usr/share/cacert.pem                       0777 0 0
+file /etc/httpd/httpd.conf            ${SKELETON_DIR}/etc/httpd/httpd.conf           0644 10 10
+file /etc/httpd/mime.types            ${STAGING_DIR}/conf/mime.types                 0644 10 10
+file /etc/httpd/no_auth               ${SKELETON_DIR}/etc/httpd/no_auth              0644 10 10
+file /etc/httpd/with_auth             ${SKELETON_DIR}/etc/httpd/with_auth            0644 10 10
 
 file /lib/libz.so.1                   ${STAGING_DIR}/lib/libz.so.1                   0644 0 0
 file /lib/libpcre2-8.so.0             ${STAGING_DIR}/lib/libpcre2-8.so.0             0755 0 0
@@ -101,6 +111,25 @@ file /lib/libcjson.so.1               ${STAGING_DIR}/lib/libcjson.so.1          
 file /lib/libwebsockets.so            ${STAGING_DIR}/lib/libwebsockets.so            0755 0 0
 file /lib/libffi.so.8                 ${STAGING_DIR}/lib/libffi.so.8                 0755 0 0
 file /lib/libcrypt.so.1               ${STAGING_DIR}/lib/libcrypt.so.1               0755 0 0
+file /lib/libexpat.so.1               ${STAGING_DIR}/lib/libexpat.so.1               0755 0 0
+slink /lib/libexpat.so                libexpat.so.1                                  0777 0 0
+file /lib/libapr-1.so.0               ${STAGING_DIR}/lib/libapr-1.so.0               0755 0 0
+file /lib/libaprutil-1.so.0           ${STAGING_DIR}/lib/libaprutil-1.so.0           0755 0 0
+
+file /lib/httpd/mod_authn_core.so     ${STAGING_DIR}/modules/mod_authn_core.so       0755 0 0
+file /lib/httpd/mod_authn_file.so     ${STAGING_DIR}/modules/mod_authn_file.so       0755 0 0
+file /lib/httpd/mod_authz_core.so     ${STAGING_DIR}/modules/mod_authz_core.so       0755 0 0
+file /lib/httpd/mod_authz_user.so     ${STAGING_DIR}/modules/mod_authz_user.so       0755 0 0
+file /lib/httpd/mod_auth_basic.so     ${STAGING_DIR}/modules/mod_auth_basic.so       0755 0 0
+file /lib/httpd/mod_deflate.so        ${STAGING_DIR}/modules/mod_deflate.so          0755 0 0
+file /lib/httpd/mod_dir.so            ${STAGING_DIR}/modules/mod_dir.so              0755 0 0
+file /lib/httpd/mod_log_config.so     ${STAGING_DIR}/modules/mod_log_config.so       0755 0 0
+file /lib/httpd/mod_headers.so        ${STAGING_DIR}/modules/mod_headers.so          0755 0 0
+file /lib/httpd/mod_mime.so           ${STAGING_DIR}/modules/mod_mime.so             0755 0 0
+file /lib/httpd/mod_proxy.so          ${STAGING_DIR}/modules/mod_proxy.so            0755 0 0
+file /lib/httpd/mod_proxy_http.so     ${STAGING_DIR}/modules/mod_proxy_http.so       0755 0 0
+file /lib/httpd/mod_ssl.so            ${STAGING_DIR}/modules/mod_ssl.so              0755 0 0
+file /lib/httpd/mod_unixd.so          ${STAGING_DIR}/modules/mod_unixd.so            0755 0 0
 
 file /root/kickstarter/config_template.json  ${CLOSED_PACKAGES_DIR}/kickstarter/app/config_template.json   0644 0 0
 file /root/kickstarter/cli.py          ${CLOSED_PACKAGES_DIR}/kickstarter/app/cli.py          0644 0 0
@@ -148,8 +177,8 @@ file /var/web/pics/trash.png          ${CLOSED_PACKAGES_DIR}/kickstarter/web/pic
 file /var/web/pics/up.png             ${CLOSED_PACKAGES_DIR}/kickstarter/web/pics/up.png           0644 0 0
 file /var/web/pics/logo_insys.png     ${CLOSED_PACKAGES_DIR}/kickstarter/web/pics/logo_insys.png   0644 0 0
 
-file /var/web/help/files.html         ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/files.html       0644 0 0
-file /var/web/help/overview.html      ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/overview.html    0644 0 0
+file /var/web/help/files.html                 ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/files.html                 0644 0 0
+file /var/web/help/overview.html              ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/overview.html              0644 0 0
 file /var/web/help/device_settings.html       ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/device_settings.html       0644 0 0
 file /var/web/help/kickstarter_settings.html  ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/kickstarter_settings.html  0644 0 0
 file /var/web/help/status.html                ${CLOSED_PACKAGES_DIR}/kickstarter/web/help/status.html                0644 0 0
@@ -158,7 +187,7 @@ file /var/web/help/status.html                ${CLOSED_PACKAGES_DIR}/kickstarter
 # Python files             #
 ############################
 # create these lines automatically by executing the next line in "rootfs_staging/<arch>/usr/local/"
-# ../../../../scripts/gen_initramfs_list.sh -u $(id -u) -g $(id -g) -d ./ | grep -v '/share/' | grep -v '__pycache__' | grep -v '/include/' | grep -v '/site-packages' | grep -v 'turtledemo' | sed 's| ./| ${STAGING_DIR}/usr/local/|' | sed 's|file /lib|file /usr/local/lib|' | sed 's|dir /lib|dir /usr/local/lib|' |  sort > ../list.txt
+# ../../../../scripts/gen_initramfs_list.sh -u $(id -u) -g $(id -g) -d ./ | grep -v '/share/' | grep -v '__pycache__' | grep -v '/include/' | grep -v '/site-packages' | sed 's| ./| ${STAGING_DIR}/usr/local/|' | sed 's|file /lib|file /usr/local/lib|' | sed 's|dir /lib|dir /usr/local/lib|' |  sort > ../list.txt
 
 include snippets/python_${ARCH}.txt
 
@@ -166,9 +195,9 @@ include snippets/python_${ARCH}.txt
 #############################
 # additional Python modules #
 #############################
-dir /usr/local/lib/python3.14/site-packages 755 0 0
+dir /usr/local/lib/python3.15/site-packages 755 0 0
 
 # execute in rootfs_staging/$ARCH:
-# ../../scripts/gen_initramfs_list.sh -u $(id -u) -g $(id -g) -d ./ | grep '/usr/local/lib/python3.14/site-packages/*/' | sed 's| ./usr/local/lib/python3.14/site-packages/| ${STAGING_DIR}/usr/local/lib/python3.14/site-packages/|' | sort > ../../scripts/rootfs_lists/snippets/python_modules.txt
+# ../../scripts/gen_initramfs_list.sh -u $(id -u) -g $(id -g) -d ./ | grep '/usr/local/lib/python3.15/site-packages/*/' | sed 's| ./usr/local/lib/python3.15/site-packages/| ${STAGING_DIR}/usr/local/lib/python3.15/site-packages/|' | sort > ../../scripts/rootfs_lists/snippets/python_modules.txt
 
 include snippets/python_modules.txt
