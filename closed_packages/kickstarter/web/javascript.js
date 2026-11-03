@@ -591,7 +591,6 @@ function interprete_settings() {
 
     document.getElementById('kickstarter_login_active').checked = settings["login"]["active"];
     document.getElementById('kickstarter_username').value       = settings["login"]["username"];
-    document.getElementById('kickstarter_password').value       = settings["login"]["password"];
     document.getElementById('kickstarter_prefix').value         = settings["net"]["prefix"];
     document.getElementById('kickstarter_ignore_ips').value     = settings["net"]["ignore_ips"];
 

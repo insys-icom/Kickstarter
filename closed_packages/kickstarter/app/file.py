@@ -221,12 +221,14 @@ class File():
         username = login["username"]
         password = login["password"]
 
-        if username == "" or password == "":
-            active = False
-        else:
+        if username != "" and password != "":
             # create a new password file for httpd
             with Popen([ "htpasswd", "-b", "-c", "/data/etc/httpd_password", username, password ], stdout=PIPE, stderr=PIPE) as c:
                 c.communicate()
+
+        # do not active authentication when no password has ever been set
+        if not path.exists("/data/etc/httpd_password"):
+            active = False
 
         # set the link to the correct include file
         p = Path('/data/etc/httpd_directory')

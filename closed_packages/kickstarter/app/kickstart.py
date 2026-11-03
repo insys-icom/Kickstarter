@@ -301,6 +301,12 @@ class Kickstart():
                 if self.__settings["login"] != settings_new["login"]:
                     self.__file.set_login(settings_new["login"])
 
+                # remove the password, we do not want to store the password in clear text
+                try:
+                    del settings_new["login"]["password"]
+                except KeyError:
+                    pass
+
                 # store the received settings in file
                 self.__settings = settings_new
                 self.__config["settings"] = self.__settings
