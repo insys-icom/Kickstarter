@@ -559,15 +559,13 @@ function interprete_profile() {
     display_upload();
     display_aftercare_requests();
 
-
-
     document.getElementById('initial_login_username').value = profile["initial_login"]["username"];
     document.getElementById('initial_login_password').value = profile["initial_login"]["password"];
 
     if (!profile["ics"]) {
         profile["ics"] = { "active": false };
     }
-    document.getElementById('ics_active').checked = profile["ics"]["active"];
+    //document.getElementById('ics_active').checked = profile["ics"]["active"];
 
     if (!profile["irm"]) {
         profile["irm"] = { "active": false };

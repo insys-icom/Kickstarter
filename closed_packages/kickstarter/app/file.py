@@ -226,7 +226,7 @@ class File():
             with Popen([ "htpasswd", "-b", "-c", "/data/etc/httpd_password", username, password ], stdout=PIPE, stderr=PIPE) as c:
                 c.communicate()
 
-        # do not active authentication when no password has ever been set
+        # do not activate authentication when no password has ever been set
         if not path.exists("/data/etc/httpd_password"):
             active = False
 
