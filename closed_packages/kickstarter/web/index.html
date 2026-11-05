@@ -7,10 +7,15 @@
 <link rel="icon" href="pics/favicon.ico" sizes="48x48">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="mqtt.min.js" ></script>
-<script src="javascript.js"></script>
+<script defer src="javascript.js"></script>
 </head>
 
-<body onload="start_mqtt()">
+<body>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+      start_mqtt();
+    });
+</script>
 
 <navi>
     <div class="box box_navi">
